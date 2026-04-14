@@ -1,0 +1,21 @@
+{
+  "name": "moodle_local_courseexams",
+  "version": "1.0.0",
+  "description": "Plugin Moodle autonome centré sur une seule page:",
+  "main": "view.js",
+  "scripts": {
+    "verify:e2e": "node scripts/verify_e2e.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SouphianeJ/moodle_local_courseexams.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SouphianeJ/moodle_local_courseexams/issues"
+  },
+  "homepage": "https://github.com/SouphianeJ/moodle_local_courseexams#readme"
+}

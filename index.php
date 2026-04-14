@@ -29,7 +29,6 @@ $jsconfig = [
     ],
 ];
 
-$PAGE->requires->js_init_code('window.localCourseExamsConfig = ' . json_encode($jsconfig) . ';');
 $PAGE->requires->js(new moodle_url('/local/courseexams/view.js'));
 
 echo $OUTPUT->header();
@@ -40,5 +39,6 @@ echo $OUTPUT->render_from_template('local_courseexams/index', [
     'buttonlabel' => get_string('loadcourse', 'local_courseexams'),
     'fieldlabel' => get_string('courseid', 'local_courseexams'),
     'refreshhint' => get_string('autorefreshhint', 'local_courseexams'),
+    'configjson' => json_encode($jsconfig),
 ]);
 echo $OUTPUT->footer();

@@ -261,7 +261,7 @@ class exam_catalog {
     private function get_quiz_overrides(int $quizid): array {
         global $DB;
 
-        $records = $DB->get_records('quiz_overrides', ['quiz' => $quizid], 'sortorder ASC, id ASC');
+        $records = $DB->get_records('quiz_overrides', ['quiz' => $quizid], 'id ASC');
         $userids = [];
         $groupids = [];
 

@@ -14,6 +14,8 @@ require_once($CFG->dirroot . '/question/format/gift/format.php');
 
 global $DB;
 
+try {
+
 $course = $DB->get_record('course', ['shortname' => 'E2E_EXAMS_20260414']);
 if (!$course) {
     $course = create_course((object) [
@@ -178,6 +180,10 @@ echo json_encode([
         ],
     ],
 ], JSON_PRETTY_PRINT) . PHP_EOL;
+} catch (Throwable $throwable) {
+    fwrite(STDERR, $throwable->__toString() . PHP_EOL);
+    exit(1);
+}
 
 function upsert_user(string $username, string $firstname, string $lastname, string $email, string $password): stdClass {
     global $DB;
@@ -264,7 +270,9 @@ function ensure_dashboard_questions(stdClass $course, stdClass $questioncategory
     [$insql, $inparams] = $DB->get_in_or_equal($expected, SQL_PARAMS_NAMED);
     $sql = "SELECT q.id, q.name
               FROM {question} q
-             WHERE q.category = :categoryid
+              JOIN {question_versions} qv ON qv.questionid = q.id
+              JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+             WHERE qbe.questioncategoryid = :categoryid
                AND q.name {$insql}";
     $params = array_merge(['categoryid' => $questioncategory->id], $inparams);
     $records = $DB->get_records_sql($sql, $params);
@@ -351,13 +359,14 @@ function ensure_module(testing_data_generator $generator, string $modname, array
 function ensure_assign_override(int $assignid, array $identity, array $fields): void {
     global $DB;
 
+    $DB->delete_records('assign_overrides', ['assignid' => $assignid, 'userid' => 0, 'groupid' => 0]);
     $existing = $DB->get_record('assign_overrides', ['assignid' => $assignid] + $identity);
-    $record = (object) ([
+    $record = (object) array_merge([
         'assignid' => $assignid,
         'sortorder' => 0,
         'userid' => 0,
         'groupid' => 0,
-    ] + $identity + $fields);
+    ], $identity, $fields);
 
     if ($existing) {
         $record->id = $existing->id;
@@ -370,12 +379,13 @@ function ensure_assign_override(int $assignid, array $identity, array $fields): 
 function ensure_quiz_override(int $quizid, array $identity, array $fields): void {
     global $DB;
 
+    $DB->delete_records('quiz_overrides', ['quiz' => $quizid, 'userid' => 0, 'groupid' => 0]);
     $existing = $DB->get_record('quiz_overrides', ['quiz' => $quizid] + $identity);
-    $record = (object) ([
+    $record = (object) array_merge([
         'quiz' => $quizid,
         'userid' => 0,
         'groupid' => 0,
-    ] + $identity + $fields);
+    ], $identity, $fields);
 
     if ($existing) {
         $record->id = $existing->id;

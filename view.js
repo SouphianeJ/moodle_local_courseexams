@@ -1,10 +1,17 @@
 (function() {
-    const config = window.localCourseExamsConfig || {};
+    const bootstrap = () => {
+    const configNode = document.getElementById('local-courseexams-config');
+    const config = configNode ? JSON.parse(configNode.textContent || '{}') : {};
     const form = document.getElementById('local-courseexams-form');
     const input = document.getElementById('local-courseexams-courseid');
     const statusNode = document.getElementById('local-courseexams-status');
     const summaryNode = document.getElementById('local-courseexams-summary');
     const listNode = document.getElementById('local-courseexams-list');
+
+    if (!form || !input || !statusNode || !summaryNode || !listNode) {
+        return;
+    }
+
     let currentCourseId = Number(config.initialcourseid || 0);
     let timer = null;
 
@@ -179,5 +186,12 @@
     if (currentCourseId > 0) {
         loadCourse(currentCourseId);
         restartTimer();
+    }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
+    } else {
+        bootstrap();
     }
 })();

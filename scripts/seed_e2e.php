@@ -261,7 +261,7 @@ function ensure_dashboard_questions(stdClass $course, stdClass $questioncategory
         'Quiz Delta MCQ 1',
     ];
 
-    [$insql, $inparams] = $DB->sql_in($expected);
+    [$insql, $inparams] = $DB->get_in_or_equal($expected, SQL_PARAMS_NAMED);
     $sql = "SELECT q.id, q.name
               FROM {question} q
              WHERE q.category = :categoryid

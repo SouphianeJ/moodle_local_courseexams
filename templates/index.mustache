@@ -1,0 +1,20 @@
+<section class="local-courseexams-page">
+    <div class="local-courseexams-hero">
+        <h2>{{title}}</h2>
+        <p>{{subtitle}}</p>
+        <form id="local-courseexams-form" class="local-courseexams-form">
+            <div class="fitem">
+                <label for="local-courseexams-courseid">{{fieldlabel}}</label>
+                <input id="local-courseexams-courseid" type="number" min="1" value="{{courseid}}" required>
+            </div>
+            <div class="fitem">
+                <button class="btn btn-primary" type="submit">{{buttonlabel}}</button>
+            </div>
+            <div class="fitem local-courseexams-muted">{{refreshhint}}</div>
+        </form>
+    </div>
+
+    <div id="local-courseexams-status" class="local-courseexams-status"></div>
+    <div id="local-courseexams-summary" class="local-courseexams-summary"></div>
+    <div id="local-courseexams-list" class="local-courseexams-list"></div>
+</section>

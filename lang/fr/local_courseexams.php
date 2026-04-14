@@ -1,0 +1,32 @@
+<?php
+defined('MOODLE_INTERNAL') || die();
+
+$string['pluginname'] = 'Tableau de bord des examens';
+$string['pageheading'] = 'Vue centralisée des examens du cours';
+$string['pagedescription'] = 'Saisissez un identifiant de cours pour centraliser toutes les données des devoirs et quiz.';
+$string['loadcourse'] = 'Charger le cours';
+$string['courseid'] = 'ID du cours';
+$string['autorefreshhint'] = 'La page se rafraîchit automatiquement toutes les 20 secondes.';
+$string['loading'] = 'Chargement des données examens...';
+$string['emptyresults'] = 'Aucun devoir ou quiz trouvé pour ce cours.';
+$string['invalidcourseid'] = 'ID de cours inconnu.';
+$string['unknownerror'] = 'Erreur inattendue pendant le chargement du cours.';
+$string['accessdeniednoteacher'] = 'Accès refusé. Vous devez avoir un rôle teacher ou editingteacher dans ce cours.';
+$string['allowsubmissionsfromdate'] = 'Ouverture des remises';
+$string['duedate'] = 'Date limite';
+$string['cutoffdate'] = 'Date de clôture';
+$string['gradingduedate'] = 'Date limite de correction';
+$string['grade'] = 'Note';
+$string['grademax'] = 'Note maximale';
+$string['teamsubmission'] = 'Remise en équipe';
+$string['submissiontypes'] = 'Types de remise';
+$string['activityurl'] = 'URL de l’activité';
+$string['timeopen'] = 'Ouverture';
+$string['timeclose'] = 'Fermeture';
+$string['timelimit'] = 'Temps limite';
+$string['attempts'] = 'Tentatives';
+$string['questionsperpage'] = 'Questions par page';
+$string['preferredbehaviour'] = 'Comportement';
+$string['unlimited'] = 'Illimité';
+$string['individualoverrides'] = 'Dérogations individuelles';
+$string['groupoverrides'] = 'Dérogations de groupe';

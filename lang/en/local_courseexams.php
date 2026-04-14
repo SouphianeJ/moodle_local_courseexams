@@ -1,0 +1,32 @@
+<?php
+defined('MOODLE_INTERNAL') || die();
+
+$string['pluginname'] = 'Course Exams Dashboard';
+$string['pageheading'] = 'Course exams dashboard';
+$string['pagedescription'] = 'Enter a course ID to centralise all assignment and quiz exam data in one place.';
+$string['loadcourse'] = 'Load course';
+$string['courseid'] = 'Course ID';
+$string['autorefreshhint'] = 'The page refreshes automatically every 20 seconds.';
+$string['loading'] = 'Loading exam data...';
+$string['emptyresults'] = 'No assignments or quizzes found for this course.';
+$string['invalidcourseid'] = 'Unknown course ID.';
+$string['unknownerror'] = 'Unexpected error while loading the course.';
+$string['accessdeniednoteacher'] = 'Access denied. You must have a teacher or editing teacher role in this course.';
+$string['allowsubmissionsfromdate'] = 'Submission open';
+$string['duedate'] = 'Due date';
+$string['cutoffdate'] = 'Cut-off date';
+$string['gradingduedate'] = 'Grading due date';
+$string['grade'] = 'Grade';
+$string['grademax'] = 'Maximum grade';
+$string['teamsubmission'] = 'Team submission';
+$string['submissiontypes'] = 'Submission types';
+$string['activityurl'] = 'Activity URL';
+$string['timeopen'] = 'Open date';
+$string['timeclose'] = 'Close date';
+$string['timelimit'] = 'Time limit';
+$string['attempts'] = 'Attempts';
+$string['questionsperpage'] = 'Questions per page';
+$string['preferredbehaviour'] = 'Preferred behaviour';
+$string['unlimited'] = 'Unlimited';
+$string['individualoverrides'] = 'Individual overrides';
+$string['groupoverrides'] = 'Group overrides';

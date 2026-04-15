@@ -375,7 +375,7 @@ class exam_catalog {
             $questions[] = [
                 'slot' => $slot,
                 'displayednumber' => $structure->get_displayed_number_for_slot($slot),
-                'name' => format_string($question->name ?? '', true),
+                'name' => $this->format_question_text($question),
                 'qtype' => $question->qtype ?? '',
                 'maxmark' => isset($question->maxmark) ? format_float($question->maxmark, 2) : '',
                 'page' => $structure->get_page_number_for_slot($slot),
@@ -429,5 +429,24 @@ class exam_catalog {
 
     private function get_activity_edit_url(int $cmid): string {
         return (new \moodle_url('/course/modedit.php', ['update' => $cmid, 'return' => 1]))->out(false);
+    }
+
+    private function format_question_text(\stdClass $question): string {
+        $text = '';
+
+        if (!empty($question->questiontext)) {
+            $formatted = format_text(
+                $question->questiontext,
+                $question->questiontextformat ?? FORMAT_HTML,
+                ['noclean' => false, 'para' => false, 'context' => null]
+            );
+            $text = trim(preg_replace('/\s+/', ' ', html_to_text($formatted, 0, false)));
+        }
+
+        if ($text !== '') {
+            return $text;
+        }
+
+        return format_string($question->name ?? '', true);
     }
 }

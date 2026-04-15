@@ -103,12 +103,12 @@ class exam_catalog {
 
         return [
             'type' => 'assign',
-            'type_label' => 'Assignment',
+            'type_label' => get_string('assignmentlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$assign->id,
             'visible' => (int)$cm->visible,
-            'visible_label' => $cm->visible ? get_string('visible') : get_string('hidden'),
+            'visible_label' => $cm->visible ? get_string('visiblelabel', 'local_courseexams') : get_string('hiddenlabel', 'local_courseexams'),
             'section' => [
                 'number' => (int)$cm->sectionnum,
                 'label' => $sectionlabel,
@@ -120,7 +120,7 @@ class exam_catalog {
                 ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate)],
                 ['label' => get_string('gradingduedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->gradingduedate)],
                 ['label' => get_string('grade', 'local_courseexams'), 'value' => (string)($assign->grade ?? '')],
-                ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yes') : get_string('no')],
+                ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],
                 ['label' => get_string('activityurl', 'local_courseexams'), 'value' => $cm->url ? $cm->url->out(false) : '-'],
             ],
@@ -139,12 +139,12 @@ class exam_catalog {
 
         return [
             'type' => 'quiz',
-            'type_label' => 'Quiz',
+            'type_label' => get_string('quizlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$quiz->id,
             'visible' => (int)$cm->visible,
-            'visible_label' => $cm->visible ? get_string('visible') : get_string('hidden'),
+            'visible_label' => $cm->visible ? get_string('visiblelabel', 'local_courseexams') : get_string('hiddenlabel', 'local_courseexams'),
             'section' => [
                 'number' => (int)$cm->sectionnum,
                 'label' => $sectionlabel,
@@ -236,7 +236,7 @@ class exam_catalog {
                     'title' => get_string('individualoverrides', 'local_courseexams'),
                     'count' => count($useritems),
                     'columns' => [
-                        ['key' => 'name', 'label' => get_string('user')],
+                        ['key' => 'name', 'label' => get_string('userlabel', 'local_courseexams')],
                         ['key' => 'open', 'label' => get_string('allowsubmissionsfromdate', 'local_courseexams')],
                         ['key' => 'due', 'label' => get_string('duedate', 'local_courseexams')],
                         ['key' => 'cutoff', 'label' => get_string('cutoffdate', 'local_courseexams')],
@@ -247,7 +247,7 @@ class exam_catalog {
                     'title' => get_string('groupoverrides', 'local_courseexams'),
                     'count' => count($groupitems),
                     'columns' => [
-                        ['key' => 'name', 'label' => get_string('group')],
+                        ['key' => 'name', 'label' => get_string('grouplabel', 'local_courseexams')],
                         ['key' => 'open', 'label' => get_string('allowsubmissionsfromdate', 'local_courseexams')],
                         ['key' => 'due', 'label' => get_string('duedate', 'local_courseexams')],
                         ['key' => 'cutoff', 'label' => get_string('cutoffdate', 'local_courseexams')],
@@ -311,7 +311,7 @@ class exam_catalog {
                     'title' => get_string('individualoverrides', 'local_courseexams'),
                     'count' => count($useritems),
                     'columns' => [
-                        ['key' => 'name', 'label' => get_string('user')],
+                        ['key' => 'name', 'label' => get_string('userlabel', 'local_courseexams')],
                         ['key' => 'open', 'label' => get_string('timeopen', 'local_courseexams')],
                         ['key' => 'close', 'label' => get_string('timeclose', 'local_courseexams')],
                         ['key' => 'timelimit', 'label' => get_string('timelimit', 'local_courseexams')],
@@ -323,7 +323,7 @@ class exam_catalog {
                     'title' => get_string('groupoverrides', 'local_courseexams'),
                     'count' => count($groupitems),
                     'columns' => [
-                        ['key' => 'name', 'label' => get_string('group')],
+                        ['key' => 'name', 'label' => get_string('grouplabel', 'local_courseexams')],
                         ['key' => 'open', 'label' => get_string('timeopen', 'local_courseexams')],
                         ['key' => 'close', 'label' => get_string('timeclose', 'local_courseexams')],
                         ['key' => 'timelimit', 'label' => get_string('timelimit', 'local_courseexams')],

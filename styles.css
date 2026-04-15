@@ -1,11 +1,11 @@
 .local-courseexams-page {
     display: grid;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .local-courseexams-hero {
     border-radius: 20px;
-    padding: 1.5rem;
+    padding: 1rem 1.2rem;
     background:
         radial-gradient(circle at top left, rgba(31, 111, 235, 0.18), transparent 35%),
         radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.2), transparent 30%),
@@ -21,7 +21,7 @@
 .local-courseexams-form {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem 0.75rem;
     align-items: flex-end;
 }
 
@@ -37,11 +37,11 @@
 .local-courseexams-summary,
 .local-courseexams-list {
     display: grid;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .local-courseexams-summary {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .local-courseexams-stat,
@@ -53,12 +53,12 @@
 }
 
 .local-courseexams-stat {
-    padding: 1rem 1.1rem;
+    padding: 0.7rem 0.8rem;
 }
 
 .local-courseexams-stat-label {
     display: block;
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: #52606d;
@@ -66,8 +66,8 @@
 
 .local-courseexams-stat-value {
     display: block;
-    margin-top: 0.35rem;
-    font-size: 1.8rem;
+    margin-top: 0.15rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #102a43;
 }
@@ -79,35 +79,40 @@
 .local-courseexams-card-header {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: 0.5rem;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1rem 1.2rem;
+    padding: 0.75rem 0.9rem;
     background: linear-gradient(180deg, #f8fafc, #eef2f7);
     border-bottom: 1px solid #d9e2ec;
 }
 
 .local-courseexams-card-title {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #102a43;
 }
 
 .local-courseexams-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.5rem;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+}
+
+.local-courseexams-chip-row-tight {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 
 .local-courseexams-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.2rem 0.55rem;
+    padding: 0.16rem 0.48rem;
     border-radius: 999px;
     background: #dbeafe;
     color: #0f3d91;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     font-weight: 600;
 }
 
@@ -116,26 +121,31 @@
     color: #b91c1c;
 }
 
+.local-courseexams-chip-muted {
+    background: #eef2f7;
+    color: #486581;
+}
+
 .local-courseexams-card-body {
-    padding: 1rem 1.2rem 1.25rem;
+    padding: 0.8rem 0.9rem 0.9rem;
 }
 
 .local-courseexams-meta {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.8rem;
-    margin-bottom: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.45rem;
+    margin-bottom: 0.75rem;
 }
 
 .local-courseexams-meta-item {
-    padding: 0.75rem 0.85rem;
-    border-radius: 14px;
+    padding: 0.55rem 0.65rem;
+    border-radius: 12px;
     background: #f8fafc;
 }
 
 .local-courseexams-meta-label {
     display: block;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     color: #627d98;
     margin-bottom: 0.2rem;
@@ -145,24 +155,26 @@
     color: #102a43;
     font-weight: 600;
     word-break: break-word;
+    font-size: 0.88rem;
 }
 
 .local-courseexams-details {
-    margin-top: 0.9rem;
+    margin-top: 0.5rem;
     border: 1px solid #d9e2ec;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #fcfdff;
 }
 
 .local-courseexams-details summary {
     cursor: pointer;
-    padding: 0.8rem 1rem;
+    padding: 0.6rem 0.8rem;
     font-weight: 600;
     color: #102a43;
+    font-size: 0.86rem;
 }
 
 .local-courseexams-details-content {
-    padding: 0 1rem 1rem;
+    padding: 0 0.8rem 0.8rem;
 }
 
 .local-courseexams-table {
@@ -172,22 +184,22 @@
 
 .local-courseexams-table th,
 .local-courseexams-table td {
-    padding: 0.65rem 0.5rem;
+    padding: 0.45rem 0.4rem;
     border-bottom: 1px solid #e5edf5;
     text-align: left;
     vertical-align: top;
 }
 
 .local-courseexams-table th {
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     text-transform: uppercase;
     color: #627d98;
 }
 
 .local-courseexams-note,
 .local-courseexams-error {
-    padding: 0.95rem 1rem;
-    border-radius: 14px;
+    padding: 0.7rem 0.8rem;
+    border-radius: 12px;
 }
 
 .local-courseexams-note {

@@ -20,12 +20,20 @@ async function verifyTeacher() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   await login(page, 'e2eteacher', 'TeacherPass!2026');
-  await page.goto(`${baseUrl}/local/courseexams/index.php?courseid=${courseId}`, { waitUntil: 'networkidle' });
-  await page.waitForSelector('.local-courseexams-card', { timeout: 20000 });
-  await page.locator('.local-courseexams-details summary').first().click();
+  await page.goto(`${baseUrl}/local/courseexams/index.php`, { waitUntil: 'networkidle' });
+  await page.fill('#local-courseexams-courseid', 'E2E');
+  await page.waitForSelector('.local-courseexams-search-option', { timeout: 20000 });
+  await page.locator('.local-courseexams-search-option').first().click();
+  await Promise.all([
+    page.waitForSelector('.local-courseexams-exam-row', { timeout: 20000 }),
+    page.click('button[type="submit"]'),
+  ]);
+  await page.locator('.local-courseexams-row-toggle').first().click();
+  await page.waitForTimeout(1000);
+  await page.locator('#local-courseexams-archived-toggle').click();
   await page.waitForTimeout(1000);
 
-  const cards = await page.locator('.local-courseexams-card').count();
+  const rows = await page.locator('.local-courseexams-exam-row').count();
   const summary = await page.locator('.local-courseexams-summary').innerText();
   const pageText = await page.locator('body').innerText();
 
@@ -33,7 +41,7 @@ async function verifyTeacher() {
   await browser.close();
 
   return {
-    cards,
+    rows,
     summary,
     hasAssignmentAlpha: pageText.includes('Assignment Alpha'),
     hasAssignmentBeta: pageText.includes('Assignment Beta Hidden'),

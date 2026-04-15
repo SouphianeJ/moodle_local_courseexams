@@ -5,7 +5,9 @@
         <form id="local-courseexams-form" class="local-courseexams-form">
             <div class="fitem">
                 <label for="local-courseexams-courseid">{{fieldlabel}}</label>
-                <input id="local-courseexams-courseid" type="number" min="1" value="{{courseid}}" required>
+                <input id="local-courseexams-courseid" type="text" value="{{courseid}}" placeholder="{{fieldplaceholder}}" autocomplete="off" required>
+                <input id="local-courseexams-courseid-value" type="hidden" value="{{courseid}}">
+                <div id="local-courseexams-search-results" class="local-courseexams-search-results" hidden></div>
             </div>
             <div class="fitem">
                 <button class="btn btn-primary" type="submit">{{buttonlabel}}</button>

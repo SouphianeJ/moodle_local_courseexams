@@ -7,7 +7,7 @@ use context_course;
 use moodle_exception;
 
 class exam_catalog {
-    public function get_course_overview(int $courseid, int $userid): array {
+    public function get_course_overview(int $courseid, int $userid, bool $includearchived = false): array {
         global $CFG, $DB;
 
         require_once($CFG->dirroot . '/course/lib.php');
@@ -36,7 +36,8 @@ class exam_catalog {
         }
 
         $modinfo = get_fast_modinfo($course);
-        $exams = [];
+        $upcomingexams = [];
+        $archivedexams = [];
         $summary = [
             'totalexams' => 0,
             'assigncount' => 0,
@@ -79,16 +80,25 @@ class exam_catalog {
                 $summary['pastorhiddencount']++;
             }
 
-            $exams[] = $exam;
+            if (!empty($exam['isarchived'])) {
+                if ($includearchived) {
+                    $archivedexams[] = $exam;
+                }
+            } else {
+                $upcomingexams[] = $exam;
+            }
         }
 
-        usort($exams, function(array $left, array $right): int {
+        $sortexams = function(array $left, array $right): int {
             if ($left['section']['number'] === $right['section']['number']) {
                 return [$left['sortdate'], $left['cmid']] <=> [$right['sortdate'], $right['cmid']];
             }
 
             return $left['section']['number'] <=> $right['section']['number'];
-        });
+        };
+
+        usort($upcomingexams, $sortexams);
+        usort($archivedexams, $sortexams);
 
         return [
             'generated' => $this->format_datetime_bundle(time()),
@@ -99,8 +109,55 @@ class exam_catalog {
                 'categoryid' => (int)$course->category,
             ],
             'summary' => $summary,
-            'exams' => $exams,
+            'upcomingexams' => $upcomingexams,
+            'archivedexams' => $archivedexams,
         ];
+    }
+
+    public function search_courses(string $query, int $userid): array {
+        global $DB;
+
+        $query = trim($query);
+        if (\core_text::strlen($query) < 3) {
+            return [];
+        }
+
+        $like = '%' . $DB->sql_like_escape($query) . '%';
+        $params = [
+            'contextcourse' => CONTEXT_COURSE,
+            'userid' => $userid,
+            'shortname' => $like,
+            'fullname' => $like,
+        ];
+        $wherematch = $DB->sql_like('c.shortname', ':shortname', false, false) .
+            ' OR ' . $DB->sql_like('c.fullname', ':fullname', false, false);
+
+        if (preg_match('/^\d+$/', $query)) {
+            $params['courseid'] = (int)$query;
+            $wherematch = '(c.id = :courseid OR ' . $wherematch . ')';
+        } else {
+            $wherematch = '(' . $wherematch . ')';
+        }
+
+        $sql = "SELECT DISTINCT c.id, c.fullname
+                  FROM {course} c
+                  JOIN {context} ctx ON ctx.instanceid = c.id AND ctx.contextlevel = :contextcourse
+                  JOIN {role_assignments} ra ON ra.contextid = ctx.id AND ra.userid = :userid
+                  JOIN {role} r ON r.id = ra.roleid
+                 WHERE c.id <> :sitecourseid
+                   AND r.shortname IN ('teacher', 'editingteacher')
+                   AND {$wherematch}
+              ORDER BY c.fullname ASC";
+        $params['sitecourseid'] = SITEID;
+
+        $records = $DB->get_records_sql($sql, $params, 0, 10);
+
+        return array_map(function(\stdClass $record): array {
+            return [
+                'id' => (int)$record->id,
+                'fullname' => format_string($record->fullname, true),
+            ];
+        }, array_values($records));
     }
 
     private function build_assign_exam(\stdClass $course, \cm_info $cm): array {
@@ -126,6 +183,7 @@ class exam_catalog {
             ],
             'sortdate' => max((int)$assign->allowsubmissionsfromdate, (int)$assign->duedate, 0),
             'endtimestamp' => $this->resolve_assign_endtimestamp($assign),
+            'isarchived' => !$cm->visible || $this->is_exam_finished($this->resolve_assign_endtimestamp($assign)),
             'meta' => [
                 ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate)],
                 ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate)],
@@ -165,6 +223,7 @@ class exam_catalog {
             ],
             'sortdate' => max((int)$quiz->timeopen, (int)$quiz->timeclose, 0),
             'endtimestamp' => max((int)$quiz->timeclose, 0),
+            'isarchived' => !$cm->visible || $this->is_exam_finished(max((int)$quiz->timeclose, 0)),
             'meta' => [
                 ['label' => get_string('timeopen', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeopen)],
                 ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose)],
@@ -213,6 +272,10 @@ class exam_catalog {
         }
 
         return 0;
+    }
+
+    private function is_exam_finished(int $endtimestamp): bool {
+        return $endtimestamp > 0 && $endtimestamp <= time();
     }
 
     private function get_assign_overrides(int $assignid): array {

@@ -28,23 +28,24 @@
         };
 
         const renderSummary = (data) => {
-            const stats = [
-                [strings.courseid_short, data.course.id],
-                [strings.exams, data.summary.totalexams],
-                [strings.assignments, data.summary.assigncount],
-                [strings.quizzes, data.summary.quizcount],
-                [strings.visiblecount, data.summary.visiblecount],
-                [strings.hiddencount, data.summary.hiddencount],
-                [strings.overrides, data.summary.overridecount],
-                [strings.questions, data.summary.quizquestioncount],
-            ];
-
-            summaryNode.innerHTML = stats.map(([label, value]) => `
-                <article class="local-courseexams-stat">
-                    <span class="local-courseexams-stat-label">${escapeHtml(label)}</span>
-                    <span class="local-courseexams-stat-value">${escapeHtml(value)}</span>
-                </article>
-            `).join('');
+            summaryNode.innerHTML = `
+                <section class="local-courseexams-summary-bar">
+                    <div class="local-courseexams-summary-course">
+                        <span class="local-courseexams-summary-label">${escapeHtml(strings.coursefullname)}</span>
+                        <strong class="local-courseexams-summary-course-name">${escapeHtml(data.course.fullname)}</strong>
+                    </div>
+                    <div class="local-courseexams-summary-metrics">
+                        <article class="local-courseexams-summary-pill">
+                            <span class="local-courseexams-summary-label">${escapeHtml(strings.upcomingexams)}</span>
+                            <strong class="local-courseexams-summary-value">${escapeHtml(data.summary.upcomingcount)}</strong>
+                        </article>
+                        <article class="local-courseexams-summary-pill local-courseexams-summary-pill-muted">
+                            <span class="local-courseexams-summary-label">${escapeHtml(strings.pastorhiddenexams)}</span>
+                            <strong class="local-courseexams-summary-value">${escapeHtml(data.summary.pastorhiddencount)}</strong>
+                        </article>
+                    </div>
+                </section>
+            `;
         };
 
         const renderRows = (rows, columns) => {

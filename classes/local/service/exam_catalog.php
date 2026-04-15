@@ -45,7 +45,10 @@ class exam_catalog {
             'hiddencount' => 0,
             'overridecount' => 0,
             'quizquestioncount' => 0,
+            'upcomingcount' => 0,
+            'pastorhiddencount' => 0,
         ];
+        $now = time();
 
         foreach ($modinfo->get_cms() as $cm) {
             if ($cm->deletioninprogress || !in_array($cm->modname, ['assign', 'quiz'], true)) {
@@ -68,6 +71,12 @@ class exam_catalog {
                 $summary['visiblecount']++;
             } else {
                 $summary['hiddencount']++;
+            }
+
+            if (!empty($exam['visible']) && ($exam['endtimestamp'] <= 0 || $exam['endtimestamp'] > $now)) {
+                $summary['upcomingcount']++;
+            } else {
+                $summary['pastorhiddencount']++;
             }
 
             $exams[] = $exam;
@@ -114,6 +123,7 @@ class exam_catalog {
                 'label' => $sectionlabel,
             ],
             'sortdate' => max((int)$assign->allowsubmissionsfromdate, (int)$assign->duedate, 0),
+            'endtimestamp' => $this->resolve_assign_endtimestamp($assign),
             'meta' => [
                 ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate)],
                 ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate)],
@@ -150,6 +160,7 @@ class exam_catalog {
                 'label' => $sectionlabel,
             ],
             'sortdate' => max((int)$quiz->timeopen, (int)$quiz->timeclose, 0),
+            'endtimestamp' => max((int)$quiz->timeclose, 0),
             'meta' => [
                 ['label' => get_string('timeopen', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeopen)],
                 ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose)],
@@ -182,6 +193,22 @@ class exam_catalog {
         }
 
         return $enabled ? implode(', ', $enabled) : '-';
+    }
+
+    private function resolve_assign_endtimestamp(\stdClass $assign): int {
+        $timestamps = [
+            (int)$assign->cutoffdate,
+            (int)$assign->duedate,
+            (int)$assign->allowsubmissionsfromdate,
+        ];
+
+        foreach ($timestamps as $timestamp) {
+            if ($timestamp > 0) {
+                return $timestamp;
+            }
+        }
+
+        return 0;
     }
 
     private function get_assign_overrides(int $assignid): array {

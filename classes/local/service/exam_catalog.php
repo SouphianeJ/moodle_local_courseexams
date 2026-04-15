@@ -114,6 +114,7 @@ class exam_catalog {
             'type' => 'assign',
             'type_label' => get_string('assignmentlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
+            'activityurl' => $cm->url ? $cm->url->out(false) : '',
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$assign->id,
             'visible' => (int)$cm->visible,
@@ -129,10 +130,9 @@ class exam_catalog {
                 ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate)],
                 ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate)],
                 ['label' => get_string('gradingduedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->gradingduedate)],
-                ['label' => get_string('grade', 'local_courseexams'), 'value' => (string)($assign->grade ?? '')],
+                ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null)],
                 ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],
-                ['label' => get_string('activityurl', 'local_courseexams'), 'value' => $cm->url ? $cm->url->out(false) : '-'],
             ],
             'overrides' => $overrides,
             'questions' => [],
@@ -151,6 +151,7 @@ class exam_catalog {
             'type' => 'quiz',
             'type_label' => get_string('quizlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
+            'activityurl' => $cm->url ? $cm->url->out(false) : '',
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$quiz->id,
             'visible' => (int)$cm->visible,
@@ -166,10 +167,8 @@ class exam_catalog {
                 ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose)],
                 ['label' => get_string('timelimit', 'local_courseexams'), 'value' => $this->format_duration((int)$quiz->timelimit)],
                 ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts],
-                ['label' => get_string('grademax', 'local_courseexams'), 'value' => (string)($quiz->grade ?? '')],
+                ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null)],
                 ['label' => get_string('questionsperpage', 'local_courseexams'), 'value' => (string)($quiz->questionsperpage ?? '')],
-                ['label' => get_string('preferredbehaviour', 'local_courseexams'), 'value' => (string)($quiz->preferredbehaviour ?? '')],
-                ['label' => get_string('activityurl', 'local_courseexams'), 'value' => $cm->url ? $cm->url->out(false) : '-'],
             ],
             'overrides' => $overrides,
             'questions' => $questions,
@@ -414,5 +413,13 @@ class exam_catalog {
         }
 
         return format_time($seconds);
+    }
+
+    private function format_whole_number($value): string {
+        if ($value === null || $value === '') {
+            return '-';
+        }
+
+        return (string)(int)round((float)$value);
     }
 }

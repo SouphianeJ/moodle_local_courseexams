@@ -62,6 +62,9 @@
         };
 
         const renderExamCard = (exam) => {
+            const title = exam.activityurl
+                ? `<a class="local-courseexams-card-title-link" href="${escapeHtml(exam.activityurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(exam.name)}</a>`
+                : escapeHtml(exam.name);
             const questionDetails = exam.type === 'quiz'
                 ? `
                     <details class="local-courseexams-details">
@@ -93,12 +96,11 @@
                 <article class="local-courseexams-card">
                     <div class="local-courseexams-card-header">
                         <div class="local-courseexams-card-heading">
-                            <h3 class="local-courseexams-card-title">${escapeHtml(exam.name)}</h3>
+                            <h3 class="local-courseexams-card-title">${title}</h3>
                             <div class="local-courseexams-chip-row">
                                 <span class="local-courseexams-chip">${escapeHtml(exam.type_label)}</span>
                                 <span class="local-courseexams-chip">${escapeHtml(exam.section.label)}</span>
                                 <span class="local-courseexams-chip ${exam.visible ? '' : 'hidden'}">${escapeHtml(exam.visible_label)}</span>
-                                <span class="local-courseexams-chip local-courseexams-chip-muted">${escapeHtml(strings.cmid)} ${escapeHtml(exam.cmid)}</span>
                                 <span class="local-courseexams-chip local-courseexams-chip-muted">${escapeHtml(strings.instanceid)} ${escapeHtml(exam.instanceid)}</span>
                             </div>
                         </div>

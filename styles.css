@@ -150,6 +150,16 @@
     color: #102a43;
 }
 
+.local-courseexams-card-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.local-courseexams-card-title-link:hover,
+.local-courseexams-card-title-link:focus {
+    text-decoration: underline;
+}
+
 .local-courseexams-chip-row {
     display: flex;
     flex-wrap: wrap;

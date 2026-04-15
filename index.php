@@ -21,7 +21,6 @@ $jsconfig = [
     'ajaxurl' => (new moodle_url('/local/courseexams/ajax.php'))->out(false),
     'sesskey' => sesskey(),
     'initialcourseid' => $courseid,
-    'pollintervalms' => 20000,
     'strings' => [
         'loading' => get_string('loading', 'local_courseexams'),
         'empty' => get_string('emptyresults', 'local_courseexams'),

@@ -188,7 +188,6 @@ class exam_catalog {
                 ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate)],
                 ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate)],
                 ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate)],
-                ['label' => get_string('gradingduedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->gradingduedate)],
                 ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null)],
                 ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],

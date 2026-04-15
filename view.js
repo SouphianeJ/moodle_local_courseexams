@@ -16,7 +16,6 @@
         }
 
         let currentCourseId = Number(config.initialcourseid || 0);
-        let timer = null;
         let searchTimer = null;
         let selectedLabel = currentCourseId > 0 ? input.value : '';
         let archivedLoadedFor = 0;
@@ -86,9 +85,9 @@
             }
 
             return {
-                schedule: exam.meta.slice(0, 4),
-                settings: exam.meta.slice(4, 7),
-                links: exam.meta.slice(7),
+                schedule: exam.meta.slice(0, 3),
+                settings: exam.meta.slice(3, 6),
+                links: exam.meta.slice(6),
             };
         };
 
@@ -340,15 +339,6 @@
             }
         };
 
-        const restartTimer = () => {
-            if (timer) {
-                window.clearInterval(timer);
-            }
-            if (currentCourseId > 0) {
-                timer = window.setInterval(() => loadCourse(currentCourseId), Number(config.pollintervalms || 20000));
-            }
-        };
-
         const runSearch = async() => {
             const query = input.value.trim();
 
@@ -422,12 +412,10 @@
             window.history.replaceState({}, '', url);
             currentCourseId = resolvedCourseId;
             loadCourse(resolvedCourseId);
-            restartTimer();
         });
 
         if (currentCourseId > 0) {
             loadCourse(currentCourseId);
-            restartTimer();
         }
     };
 

@@ -59,4 +59,5 @@ $string['cmid'] = 'CMID';
 $string['instanceid'] = 'Instance';
 $string['refreshedat'] = 'Actualise a';
 $string['testexam'] = "Tester l'examen";
+$string['seeallquestions'] = 'Voir toutes les questions';
 $string['linklabel'] = 'Lien';

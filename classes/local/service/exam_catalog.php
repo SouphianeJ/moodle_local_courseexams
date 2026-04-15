@@ -172,6 +172,7 @@ class exam_catalog {
                 ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts],
                 ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null)],
                 ['label' => get_string('questionsperpage', 'local_courseexams'), 'value' => (string)($quiz->questionsperpage ?? '')],
+                ['label' => get_string('seeallquestions', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $this->get_quiz_questions_edit_url((int)$cm->id)],
                 ['label' => get_string('testexam', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $cm->url ? $cm->url->out(false) : ''],
             ],
             'overrides' => $overrides,
@@ -429,6 +430,10 @@ class exam_catalog {
 
     private function get_activity_edit_url(int $cmid): string {
         return (new \moodle_url('/course/modedit.php', ['update' => $cmid, 'return' => 1]))->out(false);
+    }
+
+    private function get_quiz_questions_edit_url(int $cmid): string {
+        return (new \moodle_url('/mod/quiz/edit.php', ['cmid' => $cmid]))->out(false);
     }
 
     private function format_question_text(\stdClass $question): string {

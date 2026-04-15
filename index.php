@@ -37,8 +37,6 @@ $jsconfig = [
         'type' => get_string('type', 'local_courseexams'),
         'maxmark' => get_string('maxmark', 'local_courseexams'),
         'page' => get_string('page', 'local_courseexams'),
-        'cmid' => get_string('cmid', 'local_courseexams'),
-        'instanceid' => get_string('instanceid', 'local_courseexams'),
         'refreshedat' => get_string('refreshedat', 'local_courseexams'),
     ],
 ];

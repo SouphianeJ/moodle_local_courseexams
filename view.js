@@ -62,8 +62,8 @@
         };
 
         const renderExamCard = (exam) => {
-            const title = exam.activityurl
-                ? `<a class="local-courseexams-card-title-link" href="${escapeHtml(exam.activityurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(exam.name)}</a>`
+            const title = exam.editurl
+                ? `<a class="local-courseexams-card-title-link" href="${escapeHtml(exam.editurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(exam.name)}</a>`
                 : escapeHtml(exam.name);
             const questionDetails = exam.type === 'quiz'
                 ? `
@@ -101,7 +101,6 @@
                                 <span class="local-courseexams-chip">${escapeHtml(exam.type_label)}</span>
                                 <span class="local-courseexams-chip">${escapeHtml(exam.section.label)}</span>
                                 <span class="local-courseexams-chip ${exam.visible ? '' : 'hidden'}">${escapeHtml(exam.visible_label)}</span>
-                                <span class="local-courseexams-chip local-courseexams-chip-muted">${escapeHtml(strings.instanceid)} ${escapeHtml(exam.instanceid)}</span>
                             </div>
                         </div>
                     </div>
@@ -110,7 +109,9 @@
                             ${exam.meta.map((item) => `
                                 <div class="local-courseexams-meta-item">
                                     <span class="local-courseexams-meta-label">${escapeHtml(item.label)}</span>
-                                    <span class="local-courseexams-meta-value">${escapeHtml(item.value)}</span>
+                                    <span class="local-courseexams-meta-value">${item.linkurl
+                                        ? `<a class="local-courseexams-meta-link" href="${escapeHtml(item.linkurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.value)}</a>`
+                                        : escapeHtml(item.value)}</span>
                                 </div>
                             `).join('')}
                         </div>

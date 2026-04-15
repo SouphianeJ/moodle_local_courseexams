@@ -225,6 +225,16 @@
     font-size: 0.88rem;
 }
 
+.local-courseexams-meta-link {
+    color: #0f3d91;
+    text-decoration: none;
+}
+
+.local-courseexams-meta-link:hover,
+.local-courseexams-meta-link:focus {
+    text-decoration: underline;
+}
+
 .local-courseexams-details {
     margin-top: 0.5rem;
     border: 1px solid #d9e2ec;

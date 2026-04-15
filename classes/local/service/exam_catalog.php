@@ -115,6 +115,7 @@ class exam_catalog {
             'type_label' => get_string('assignmentlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
             'activityurl' => $cm->url ? $cm->url->out(false) : '',
+            'editurl' => $this->get_activity_edit_url((int)$cm->id),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$assign->id,
             'visible' => (int)$cm->visible,
@@ -133,6 +134,7 @@ class exam_catalog {
                 ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null)],
                 ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],
+                ['label' => get_string('testexam', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $cm->url ? $cm->url->out(false) : ''],
             ],
             'overrides' => $overrides,
             'questions' => [],
@@ -152,6 +154,7 @@ class exam_catalog {
             'type_label' => get_string('quizlabel', 'local_courseexams'),
             'name' => format_string($cm->name, true, ['context' => $cm->context]),
             'activityurl' => $cm->url ? $cm->url->out(false) : '',
+            'editurl' => $this->get_activity_edit_url((int)$cm->id),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$quiz->id,
             'visible' => (int)$cm->visible,
@@ -169,6 +172,7 @@ class exam_catalog {
                 ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts],
                 ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null)],
                 ['label' => get_string('questionsperpage', 'local_courseexams'), 'value' => (string)($quiz->questionsperpage ?? '')],
+                ['label' => get_string('testexam', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $cm->url ? $cm->url->out(false) : ''],
             ],
             'overrides' => $overrides,
             'questions' => $questions,
@@ -421,5 +425,9 @@ class exam_catalog {
         }
 
         return (string)(int)round((float)$value);
+    }
+
+    private function get_activity_edit_url(int $cmid): string {
+        return (new \moodle_url('/course/modedit.php', ['update' => $cmid, 'return' => 1]))->out(false);
     }
 }

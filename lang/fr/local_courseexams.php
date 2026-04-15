@@ -58,3 +58,5 @@ $string['page'] = 'Page';
 $string['cmid'] = 'CMID';
 $string['instanceid'] = 'Instance';
 $string['refreshedat'] = 'Actualise a';
+$string['testexam'] = "Tester l'examen";
+$string['linklabel'] = 'Lien';

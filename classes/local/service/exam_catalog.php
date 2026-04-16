@@ -221,12 +221,51 @@ class exam_catalog {
         ];
     }
 
+    public function build_single_exam_grade_export(int $courseid, int $cmid, int $userid): \grade_export_xls {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/grade/export/lib.php');
+        require_once($CFG->dirroot . '/grade/export/xls/grade_export_xls.php');
+
+        [$course, $context] = $this->validate_course_access($courseid, $userid);
+        require_capability('moodle/grade:export', $context, $userid);
+        require_capability('gradeexport/xls:view', $context, $userid);
+
+        $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
+        if (!in_array($cm->modname, ['assign', 'quiz'], true)) {
+            throw new moodle_exception('invalidactivitytype', 'local_courseexams');
+        }
+
+        $gradeitemid = $DB->get_field('grade_items', 'id', [
+            'courseid' => $course->id,
+            'itemtype' => 'mod',
+            'itemmodule' => $cm->modname,
+            'iteminstance' => $cm->instance,
+        ]);
+
+        if (!$gradeitemid) {
+            throw new moodle_exception('gradeitemnotfound', 'local_courseexams');
+        }
+
+        $formdata = \grade_export::export_bulk_export_data(
+            $course->id,
+            (string)$gradeitemid,
+            0,
+            1,
+            (string)$CFG->grade_export_displaytype,
+            (int)$CFG->grade_export_decimalpoints
+        );
+
+        return new \grade_export_xls($course, 0, $formdata);
+    }
+
     private function build_assign_exam(\stdClass $course, \cm_info $cm): array {
         global $DB;
 
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
         $sectionlabel = $this->get_section_label($course, (int)$cm->sectionnum);
         $overrides = $this->get_assign_overrides((int)$assign->id);
+        $canexportgrades = has_capability('moodle/grade:export', $cm->context) && has_capability('gradeexport/xls:view', $cm->context);
 
         return [
             'type' => 'assign',
@@ -236,6 +275,7 @@ class exam_catalog {
             'editurl' => $this->get_activity_edit_url((int)$cm->id),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$assign->id,
+            'exportgradesurl' => $canexportgrades ? $this->get_single_exam_export_url((int)$course->id, (int)$cm->id) : '',
             'visible' => (int)$cm->visible,
             'visible_label' => $cm->visible ? get_string('visiblelabel', 'local_courseexams') : get_string('hiddenlabel', 'local_courseexams'),
             'section' => [
@@ -266,6 +306,7 @@ class exam_catalog {
         $sectionlabel = $this->get_section_label($course, (int)$cm->sectionnum);
         $questions = $this->get_quiz_questions((int)$quiz->id);
         $overrides = $this->get_quiz_overrides((int)$quiz->id);
+        $canexportgrades = has_capability('moodle/grade:export', $cm->context) && has_capability('gradeexport/xls:view', $cm->context);
 
         return [
             'type' => 'quiz',
@@ -275,6 +316,7 @@ class exam_catalog {
             'editurl' => $this->get_activity_edit_url((int)$cm->id),
             'cmid' => (int)$cm->id,
             'instanceid' => (int)$quiz->id,
+            'exportgradesurl' => $canexportgrades ? $this->get_single_exam_export_url((int)$course->id, (int)$cm->id) : '',
             'visible' => (int)$cm->visible,
             'visible_label' => $cm->visible ? get_string('visiblelabel', 'local_courseexams') : get_string('hiddenlabel', 'local_courseexams'),
             'section' => [
@@ -586,6 +628,13 @@ class exam_catalog {
 
     private function get_quiz_questions_edit_url(int $cmid): string {
         return (new \moodle_url('/mod/quiz/edit.php', ['cmid' => $cmid]))->out(false);
+    }
+
+    private function get_single_exam_export_url(int $courseid, int $cmid): string {
+        return (new \moodle_url('/local/courseexams/export.php', [
+            'courseid' => $courseid,
+            'cmid' => $cmid,
+        ]))->out(false);
     }
 
     private function format_question_text(\stdClass $question): string {

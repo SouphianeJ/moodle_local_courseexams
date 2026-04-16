@@ -344,6 +344,13 @@
     white-space: nowrap;
 }
 
+.local-courseexams-row-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: flex-start;
+}
+
 .local-courseexams-row-toggle {
     padding: 0.28rem 0.5rem;
     border: 1px solid #c9d6e2;
@@ -351,6 +358,25 @@
     background: #fff;
     color: #334e68;
     font-size: 0.74rem;
+}
+
+.local-courseexams-row-download {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.5rem;
+    border-radius: 999px;
+    background: #eef6ff;
+    color: #0f3d91;
+    text-decoration: none;
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+.local-courseexams-row-download:hover,
+.local-courseexams-row-download:focus {
+    text-decoration: none;
+    background: #dbeafe;
+    color: #0f3d91;
 }
 
 .local-courseexams-exam-name {

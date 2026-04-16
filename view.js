@@ -190,7 +190,17 @@
             return `
                 <tr class="local-courseexams-exam-row">
                     <td class="local-courseexams-row-toggle-cell">
-                        <button class="local-courseexams-row-toggle" type="button" aria-expanded="false" aria-controls="${escapeHtml(detailsId)}">${escapeHtml(strings.expandrow)}</button>
+                        <div class="local-courseexams-row-actions">
+                            <button class="local-courseexams-row-toggle" type="button" aria-expanded="false" aria-controls="${escapeHtml(detailsId)}">${escapeHtml(strings.expandrow)}</button>
+                            ${exam.exportgradesurl ? `
+                                <a
+                                    class="local-courseexams-row-download"
+                                    href="${escapeHtml(exam.exportgradesurl)}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >${escapeHtml(strings.downloadexamgrades || 'Download grades')}</a>
+                            ` : ''}
+                        </div>
                     </td>
                     <td>
                         <div class="local-courseexams-exam-name">${title}</div>
@@ -417,7 +427,7 @@
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 title="${escapeHtml(strings.exportgradeshint || '')}"
-                            >${escapeHtml(strings.exportgrades || 'Export grades')}</a>
+                            >${escapeHtml(strings.exportallgrades || 'Export grades')}</a>
                         ` : ''}
                         <article class="local-courseexams-summary-pill">
                             <span class="local-courseexams-summary-label">${escapeHtml(strings.upcomingexams)}</span>

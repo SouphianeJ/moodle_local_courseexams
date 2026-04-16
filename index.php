@@ -56,8 +56,9 @@ $jsconfig = [
         'cancel' => get_string('cancel', 'local_courseexams'),
         'nodate' => get_string('nodate', 'local_courseexams'),
         'invaliddatetimevalue' => get_string('invaliddatetimevalue', 'local_courseexams'),
-        'exportgrades' => get_string('exportgrades', 'local_courseexams'),
+        'exportallgrades' => get_string('exportallgrades', 'local_courseexams'),
         'exportgradeshint' => get_string('exportgradeshint', 'local_courseexams'),
+        'downloadexamgrades' => get_string('downloadexamgrades', 'local_courseexams'),
     ],
 ];
 

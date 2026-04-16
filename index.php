@@ -47,6 +47,17 @@ $jsconfig = [
         'schedule' => get_string('schedule', 'local_courseexams'),
         'settings' => get_string('settings', 'local_courseexams'),
         'expandrow' => get_string('expandrow', 'local_courseexams'),
+        'showitem' => get_string('showitem', 'local_courseexams'),
+        'hideitem' => get_string('hideitem', 'local_courseexams'),
+        'editdatetime' => get_string('editdatetime', 'local_courseexams'),
+        'editdatetimefor' => get_string('editdatetimefor', 'local_courseexams'),
+        'savedchanges' => get_string('savedchanges', 'local_courseexams'),
+        'save' => get_string('save', 'local_courseexams'),
+        'cancel' => get_string('cancel', 'local_courseexams'),
+        'nodate' => get_string('nodate', 'local_courseexams'),
+        'invaliddatetimevalue' => get_string('invaliddatetimevalue', 'local_courseexams'),
+        'exportgrades' => get_string('exportgrades', 'local_courseexams'),
+        'exportgradeshint' => get_string('exportgradeshint', 'local_courseexams'),
     ],
 ];
 

@@ -26,6 +26,22 @@ try {
                 'courses' => $service->search_courses($query, (int)$USER->id),
             ],
         ];
+    } else if ($action === 'toggle_visibility') {
+        $courseid = required_param('courseid', PARAM_INT);
+        $cmid = required_param('cmid', PARAM_INT);
+        $response = [
+            'status' => 'ok',
+            'data' => $service->toggle_exam_visibility($courseid, $cmid, (int)$USER->id),
+        ];
+    } else if ($action === 'update_datetime') {
+        $courseid = required_param('courseid', PARAM_INT);
+        $cmid = required_param('cmid', PARAM_INT);
+        $field = required_param('field', PARAM_ALPHANUMEXT);
+        $timestamp = required_param('timestamp', PARAM_INT);
+        $response = [
+            'status' => 'ok',
+            'data' => $service->update_exam_datetime($courseid, $cmid, (int)$USER->id, $field, $timestamp),
+        ];
     } else if ($action === 'archived_exams') {
         $courseid = required_param('courseid', PARAM_INT);
         $overview = $service->get_course_overview($courseid, (int)$USER->id, true);

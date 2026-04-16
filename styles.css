@@ -84,6 +84,26 @@
     gap: 0.45rem;
 }
 
+.local-courseexams-summary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    background: #102a43;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.local-courseexams-summary-action:hover,
+.local-courseexams-summary-action:focus {
+    color: #fff;
+    text-decoration: none;
+    background: #0b1f33;
+}
+
 .local-courseexams-summary-pill {
     display: inline-flex;
     align-items: center;
@@ -141,6 +161,16 @@
     color: #0f3d91;
     font-size: 0.74rem;
     font-weight: 600;
+}
+
+.local-courseexams-chip-button {
+    border: 0;
+    cursor: pointer;
+}
+
+.local-courseexams-chip-button:hover,
+.local-courseexams-chip-button:focus {
+    filter: brightness(0.96);
 }
 
 .local-courseexams-chip.hidden {
@@ -347,6 +377,21 @@
     word-break: break-word;
 }
 
+.local-courseexams-inline-action {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #0f3d91;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.local-courseexams-inline-action:hover,
+.local-courseexams-inline-action:focus {
+    text-decoration: underline;
+}
+
 .local-courseexams-detail-row td {
     padding: 0;
     background: #fbfdff;
@@ -370,6 +415,46 @@
 
 .local-courseexams-archive-content {
     padding: 0 0.75rem 0.75rem;
+}
+
+.local-courseexams-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+}
+
+.local-courseexams-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.local-courseexams-modal-dialog {
+    position: relative;
+    width: min(100% - 2rem, 420px);
+    padding: 1rem;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 25px 80px rgba(15, 23, 42, 0.25);
+    display: grid;
+    gap: 0.9rem;
+}
+
+.local-courseexams-modal-dialog h3 {
+    margin: 0;
+    color: #102a43;
+}
+
+.local-courseexams-datetime-input {
+    width: 100%;
+}
+
+.local-courseexams-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }
 
 @media (max-width: 768px) {

@@ -14,28 +14,7 @@ class exam_catalog {
         require_once($CFG->dirroot . '/mod/quiz/locallib.php');
         require_once($CFG->dirroot . '/mod/quiz/attemptlib.php');
 
-        $course = $DB->get_record('course', ['id' => $courseid], '*');
-        if (!$course) {
-            throw new moodle_exception('invalidcourseid', 'local_courseexams');
-        }
-
-        $context = context_course::instance($courseid);
-        $roles = get_user_roles($context, $userid, true);
-        $allowedroles = ['teacher', 'editingteacher'];
-        $hasteacherrole = false;
-
-        foreach ($roles as $role) {
-            if (in_array($role->shortname, $allowedroles, true)) {
-                $hasteacherrole = true;
-                break;
-            }
-        }
-
-        if (!$hasteacherrole) {
-            throw new moodle_exception('accessdeniednoteacher', 'local_courseexams');
-        }
-
-        require_capability('local/courseexams:view', $context, $userid);
+        [$course, $context] = $this->validate_course_access($courseid, $userid);
 
         $modinfo = get_fast_modinfo($course);
         $upcomingexams = [];
@@ -109,6 +88,9 @@ class exam_catalog {
                 'fullname' => format_string($course->fullname, true, ['context' => $context]),
                 'shortname' => $course->shortname,
                 'categoryid' => (int)$course->category,
+                'canexportgrades' => has_capability('moodle/grade:export', $context, $userid) &&
+                    has_capability('gradeexport/xls:view', $context, $userid),
+                'exportgradesurl' => (new \moodle_url('/grade/export/xls/index.php', ['id' => $course->id]))->out(false),
             ],
             'summary' => $summary,
             'upcomingexams' => $upcomingexams,
@@ -162,6 +144,83 @@ class exam_catalog {
         }, array_values($records));
     }
 
+    public function toggle_exam_visibility(int $courseid, int $cmid, int $userid): array {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/course/lib.php');
+
+        [$course] = $this->validate_course_access($courseid, $userid);
+        $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
+
+        if (!in_array($cm->modname, ['assign', 'quiz'], true)) {
+            throw new moodle_exception('invalidactivitytype', 'local_courseexams');
+        }
+
+        $newvisibility = empty($cm->visible) ? 1 : 0;
+        set_coursemodule_visible($cm->id, $newvisibility, $newvisibility);
+        rebuild_course_cache($course->id, false, true);
+
+        return [
+            'cmid' => (int)$cm->id,
+            'visible' => $newvisibility,
+            'visiblelabel' => $newvisibility ? get_string('visiblelabel', 'local_courseexams') : get_string('hiddenlabel', 'local_courseexams'),
+        ];
+    }
+
+    public function update_exam_datetime(int $courseid, int $cmid, int $userid, string $field, int $timestamp): array {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/course/lib.php');
+        require_once($CFG->dirroot . '/mod/assign/lib.php');
+        require_once($CFG->dirroot . '/mod/quiz/lib.php');
+
+        [$course] = $this->validate_course_access($courseid, $userid);
+        $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
+
+        if ($timestamp < 0) {
+            throw new moodle_exception('invaliddatetimevalue', 'local_courseexams');
+        }
+
+        if ($cm->modname === 'assign') {
+            $allowedfields = ['allowsubmissionsfromdate', 'duedate', 'cutoffdate'];
+            if (!in_array($field, $allowedfields, true)) {
+                throw new moodle_exception('invaliddatetimefield', 'local_courseexams');
+            }
+
+            $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
+            $assign->instance = (int)$assign->id;
+            $assign->coursemodule = (int)$cm->id;
+            $assign->{$field} = $timestamp;
+            assign_update_instance($assign, null);
+        } else if ($cm->modname === 'quiz') {
+            $allowedfields = ['timeopen', 'timeclose'];
+            if (!in_array($field, $allowedfields, true)) {
+                throw new moodle_exception('invaliddatetimefield', 'local_courseexams');
+            }
+
+            $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
+            $quiz->instance = (int)$quiz->id;
+            $quiz->coursemodule = (int)$cm->id;
+            $quiz->{$field} = $timestamp;
+            $result = quiz_update_instance($quiz, null);
+
+            if ($result !== true) {
+                throw new moodle_exception('unabletoupdatedatetime', 'local_courseexams');
+            }
+        } else {
+            throw new moodle_exception('invalidactivitytype', 'local_courseexams');
+        }
+
+        rebuild_course_cache($course->id, false, true);
+
+        return [
+            'cmid' => (int)$cm->id,
+            'field' => $field,
+            'timestamp' => $timestamp,
+            'label' => $this->format_datetime($timestamp),
+        ];
+    }
+
     private function build_assign_exam(\stdClass $course, \cm_info $cm): array {
         global $DB;
 
@@ -187,9 +246,9 @@ class exam_catalog {
             'endtimestamp' => $this->resolve_assign_endtimestamp($assign),
             'isarchived' => !$cm->visible || $this->is_exam_finished($this->resolve_assign_endtimestamp($assign)),
             'meta' => [
-                ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate)],
-                ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate)],
-                ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate)],
+                ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate), 'datetimefield' => 'allowsubmissionsfromdate', 'datetimetimestamp' => (int)$assign->allowsubmissionsfromdate],
+                ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate), 'datetimefield' => 'duedate', 'datetimetimestamp' => (int)$assign->duedate],
+                ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate), 'datetimefield' => 'cutoffdate', 'datetimetimestamp' => (int)$assign->cutoffdate],
                 ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null)],
                 ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],
@@ -226,8 +285,8 @@ class exam_catalog {
             'endtimestamp' => max((int)$quiz->timeclose, 0),
             'isarchived' => !$cm->visible || $this->is_exam_finished(max((int)$quiz->timeclose, 0)),
             'meta' => [
-                ['label' => get_string('timeopen', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeopen)],
-                ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose)],
+                ['label' => get_string('timeopen', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeopen), 'datetimefield' => 'timeopen', 'datetimetimestamp' => (int)$quiz->timeopen],
+                ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose), 'datetimefield' => 'timeclose', 'datetimetimestamp' => (int)$quiz->timeclose],
                 ['label' => get_string('timelimit', 'local_courseexams'), 'value' => $this->format_duration((int)$quiz->timelimit)],
                 ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts],
                 ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null)],
@@ -459,6 +518,35 @@ class exam_catalog {
         }
 
         return get_string('section') . ' ' . $sectionnum;
+    }
+
+    private function validate_course_access(int $courseid, int $userid): array {
+        global $DB;
+
+        $course = $DB->get_record('course', ['id' => $courseid], '*');
+        if (!$course) {
+            throw new moodle_exception('invalidcourseid', 'local_courseexams');
+        }
+
+        $context = context_course::instance($courseid);
+        $roles = get_user_roles($context, $userid, true);
+        $allowedroles = ['teacher', 'editingteacher'];
+        $hasteacherrole = false;
+
+        foreach ($roles as $role) {
+            if (in_array($role->shortname, $allowedroles, true)) {
+                $hasteacherrole = true;
+                break;
+            }
+        }
+
+        if (!$hasteacherrole) {
+            throw new moodle_exception('accessdeniednoteacher', 'local_courseexams');
+        }
+
+        require_capability('local/courseexams:view', $context, $userid);
+
+        return [$course, $context];
     }
 
     private function format_datetime_bundle(int $timestamp): array {

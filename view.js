@@ -19,6 +19,7 @@
         let searchTimer = null;
         let selectedLabel = currentCourseId > 0 ? input.value : '';
         let archivedLoadedFor = 0;
+        let isMutating = false;
 
         const escapeHtml = (value) => String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -29,6 +30,19 @@
 
         const renderState = (type, message) => {
             statusNode.innerHTML = message ? `<div class="local-courseexams-${type}">${escapeHtml(message)}</div>` : '';
+        };
+
+        const formatString = (template, value) => String(template || '').replace('{$a}', value ?? '');
+
+        const toDatetimeLocalValue = (timestamp) => {
+            if (!timestamp || Number(timestamp) <= 0) {
+                return '';
+            }
+
+            const date = new Date(Number(timestamp) * 1000);
+            const pad = (value) => String(value).padStart(2, '0');
+
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
         };
 
         const hideSearchResults = () => {
@@ -91,11 +105,23 @@
             };
         };
 
-        const renderMetaLines = (items) => items.map((item) => `
+        const renderMetaLines = (items, exam) => items.map((item) => `
             <div class="local-courseexams-cell-line">
                 <span class="local-courseexams-cell-label">${escapeHtml(item.label)}</span>
                 <span class="local-courseexams-cell-value">${item.linkurl
                     ? `<a class="local-courseexams-meta-link" href="${escapeHtml(item.linkurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.value)}</a>`
+                    : item.datetimefield
+                        ? `<button
+                            class="local-courseexams-inline-action"
+                            type="button"
+                            data-action="edit-datetime"
+                            data-course-id="${escapeHtml(currentCourseId)}"
+                            data-cm-id="${escapeHtml(exam.cmid)}"
+                            data-field="${escapeHtml(item.datetimefield)}"
+                            data-label="${escapeHtml(item.label)}"
+                            data-value="${escapeHtml(item.value)}"
+                            data-timestamp="${escapeHtml(item.datetimetimestamp || 0)}"
+                        >${escapeHtml(item.value || strings.nodate || '-')}</button>`
                     : escapeHtml(item.value)}</span>
             </div>
         `).join('');
@@ -159,6 +185,7 @@
             const title = exam.editurl
                 ? `<a class="local-courseexams-card-title-link" href="${escapeHtml(exam.editurl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(exam.name)}</a>`
                 : escapeHtml(exam.name);
+            const visibilityLabel = exam.visible ? strings.hideitem : strings.showitem;
 
             return `
                 <tr class="local-courseexams-exam-row">
@@ -170,12 +197,20 @@
                         <div class="local-courseexams-chip-row">
                             <span class="local-courseexams-chip">${escapeHtml(exam.type_label)}</span>
                             <span class="local-courseexams-chip local-courseexams-chip-muted">${escapeHtml(exam.section.label)}</span>
-                            <span class="local-courseexams-chip ${exam.visible ? '' : 'hidden'}">${escapeHtml(exam.visible_label)}</span>
+                            <button
+                                class="local-courseexams-chip local-courseexams-chip-button ${exam.visible ? '' : 'hidden'}"
+                                type="button"
+                                data-action="toggle-visibility"
+                                data-course-id="${escapeHtml(currentCourseId)}"
+                                data-cm-id="${escapeHtml(exam.cmid)}"
+                                aria-label="${escapeHtml(visibilityLabel)}"
+                                title="${escapeHtml(visibilityLabel)}"
+                            >${escapeHtml(exam.visible_label)}</button>
                         </div>
                     </td>
-                    <td>${renderMetaLines(groups.schedule)}</td>
-                    <td>${renderMetaLines(groups.settings)}</td>
-                    <td>${renderMetaLines(groups.links)}</td>
+                    <td>${renderMetaLines(groups.schedule, exam)}</td>
+                    <td>${renderMetaLines(groups.settings, exam)}</td>
+                    <td>${renderMetaLines(groups.links, exam)}</td>
                 </tr>
                 <tr id="${escapeHtml(detailsId)}" class="local-courseexams-detail-row" hidden>
                     <td colspan="5">${renderExamDetail(exam)}</td>
@@ -264,6 +299,109 @@
             });
         };
 
+        const closeDatetimeModal = () => {
+            const modal = document.getElementById('local-courseexams-datetime-modal');
+            if (modal) {
+                modal.remove();
+            }
+        };
+
+        const openDatetimeModal = ({ cmid, field, label, timestamp }) => {
+            closeDatetimeModal();
+
+            const modal = document.createElement('div');
+            modal.id = 'local-courseexams-datetime-modal';
+            modal.className = 'local-courseexams-modal';
+            modal.innerHTML = `
+                <div class="local-courseexams-modal-backdrop" data-action="close-datetime-modal"></div>
+                <div class="local-courseexams-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="local-courseexams-datetime-title">
+                    <h3 id="local-courseexams-datetime-title">${escapeHtml(formatString(strings.editdatetimefor || strings.editdatetime || '', label))}</h3>
+                    <input id="local-courseexams-datetime-input" class="local-courseexams-datetime-input" type="datetime-local" value="${escapeHtml(toDatetimeLocalValue(timestamp))}">
+                    <div class="local-courseexams-modal-actions">
+                        <button type="button" class="btn btn-secondary" data-action="close-datetime-modal">${escapeHtml(strings.cancel || 'Cancel')}</button>
+                        <button type="button" class="btn btn-primary" data-action="save-datetime" data-cm-id="${escapeHtml(cmid)}" data-field="${escapeHtml(field)}">${escapeHtml(strings.save || 'Save')}</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            const inputNode = document.getElementById('local-courseexams-datetime-input');
+            if (inputNode) {
+                inputNode.focus();
+            }
+        };
+
+        const refreshCurrentCourse = async(message) => {
+            await loadCourse(currentCourseId);
+
+            if (message) {
+                renderState('note', message);
+            }
+        };
+
+        const handleToggleVisibility = async(button) => {
+            if (isMutating) {
+                return;
+            }
+
+            isMutating = true;
+            button.disabled = true;
+            renderState('note', strings.loading || '');
+
+            try {
+                await fetchJson({
+                    action: 'toggle_visibility',
+                    courseid: button.getAttribute('data-course-id') || String(currentCourseId),
+                    cmid: button.getAttribute('data-cm-id') || '',
+                });
+                await refreshCurrentCourse(strings.savedchanges || '');
+            } catch (error) {
+                renderState('error', error.message || 'Erreur');
+            } finally {
+                button.disabled = false;
+                isMutating = false;
+            }
+        };
+
+        const handleSaveDatetime = async(button) => {
+            if (isMutating) {
+                return;
+            }
+
+            const inputNode = document.getElementById('local-courseexams-datetime-input');
+            if (!inputNode || !inputNode.value) {
+                renderState('error', strings.invaliddatetimevalue || 'Invalid date');
+                return;
+            }
+
+            const parsedDate = new Date(inputNode.value);
+            if (Number.isNaN(parsedDate.getTime())) {
+                renderState('error', strings.invaliddatetimevalue || 'Invalid date');
+                return;
+            }
+
+            isMutating = true;
+            button.disabled = true;
+            renderState('note', strings.loading || '');
+
+            try {
+                await fetchJson({
+                    action: 'update_datetime',
+                    courseid: String(currentCourseId),
+                    cmid: button.getAttribute('data-cm-id') || '',
+                    field: button.getAttribute('data-field') || '',
+                    timestamp: String(Math.floor(parsedDate.getTime() / 1000)),
+                });
+                closeDatetimeModal();
+                await refreshCurrentCourse(strings.savedchanges || '');
+            } catch (error) {
+                renderState('error', error.message || 'Erreur');
+            } finally {
+                button.disabled = false;
+                isMutating = false;
+            }
+        };
+
         const renderSummary = (data) => {
             summaryNode.innerHTML = `
                 <section class="local-courseexams-summary-bar">
@@ -272,6 +410,15 @@
                         <strong class="local-courseexams-summary-course-name">${escapeHtml(data.course.fullname)}</strong>
                     </div>
                     <div class="local-courseexams-summary-metrics">
+                        ${data.course.canexportgrades && data.course.exportgradesurl ? `
+                            <a
+                                class="local-courseexams-summary-action"
+                                href="${escapeHtml(data.course.exportgradesurl)}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="${escapeHtml(strings.exportgradeshint || '')}"
+                            >${escapeHtml(strings.exportgrades || 'Export grades')}</a>
+                        ` : ''}
                         <article class="local-courseexams-summary-pill">
                             <span class="local-courseexams-summary-label">${escapeHtml(strings.upcomingexams)}</span>
                             <strong class="local-courseexams-summary-value">${escapeHtml(data.summary.upcomingcount)}</strong>
@@ -384,6 +531,35 @@
         });
 
         document.addEventListener('click', (event) => {
+            const toggleVisibilityButton = event.target.closest('[data-action="toggle-visibility"]');
+            if (toggleVisibilityButton) {
+                handleToggleVisibility(toggleVisibilityButton);
+                return;
+            }
+
+            const editDatetimeButton = event.target.closest('[data-action="edit-datetime"]');
+            if (editDatetimeButton) {
+                openDatetimeModal({
+                    cmid: editDatetimeButton.getAttribute('data-cm-id') || '',
+                    field: editDatetimeButton.getAttribute('data-field') || '',
+                    label: editDatetimeButton.getAttribute('data-label') || '',
+                    timestamp: Number(editDatetimeButton.getAttribute('data-timestamp') || 0),
+                });
+                return;
+            }
+
+            const saveDatetimeButton = event.target.closest('[data-action="save-datetime"]');
+            if (saveDatetimeButton) {
+                handleSaveDatetime(saveDatetimeButton);
+                return;
+            }
+
+            const closeDatetimeButton = event.target.closest('[data-action="close-datetime-modal"]');
+            if (closeDatetimeButton) {
+                closeDatetimeModal();
+                return;
+            }
+
             const option = event.target.closest('.local-courseexams-search-option');
             if (option) {
                 hiddenInput.value = option.getAttribute('data-course-id') || '';

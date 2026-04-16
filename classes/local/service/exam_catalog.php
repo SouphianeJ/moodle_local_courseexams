@@ -4,6 +4,7 @@ namespace local_courseexams\local\service;
 defined('MOODLE_INTERNAL') || die();
 
 use context_course;
+use local_courseexams\local\export\single_exam_grade_export;
 use moodle_exception;
 
 class exam_catalog {
@@ -306,6 +307,8 @@ class exam_catalog {
             throw new moodle_exception('invalidactivitytype', 'local_courseexams');
         }
 
+        $downloadfilenamebase = format_string($cm->name, true, ['context' => $cm->context]) . ' - notes';
+
         $gradeitemid = $DB->get_field('grade_items', 'id', [
             'courseid' => $course->id,
             'itemtype' => 'mod',
@@ -326,7 +329,7 @@ class exam_catalog {
             (int)$CFG->grade_export_decimalpoints
         );
 
-        return new \grade_export_xls($course, 0, $formdata);
+        return new single_exam_grade_export($course, 0, $formdata, $downloadfilenamebase);
     }
 
     private function build_assign_exam(\stdClass $course, \cm_info $cm): array {

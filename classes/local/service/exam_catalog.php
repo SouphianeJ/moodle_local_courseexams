@@ -35,6 +35,8 @@ class exam_catalog {
             throw new moodle_exception('accessdeniednoteacher', 'local_courseexams');
         }
 
+        require_capability('local/courseexams:view', $context, $userid);
+
         $modinfo = get_fast_modinfo($course);
         $upcomingexams = [];
         $archivedexams = [];

@@ -52,19 +52,23 @@ try {
         ];
     }
 } catch (moodle_exception $exception) {
-    $response['message'] = $exception->getMessage();
     $response['errorcode'] = $exception->errorcode;
 
     if ($exception->errorcode === 'accessdeniednoteacher') {
+        $response['message'] = get_string('accessdeniednoteacher', 'local_courseexams');
         http_response_code(403);
     } else if ($exception->errorcode === 'invalidcourseid') {
+        $response['message'] = get_string('invalidcourseid', 'local_courseexams');
         http_response_code(404);
     } else {
+        $response['message'] = get_string('unknownerror', 'local_courseexams');
+        error_log('[local_courseexams] Unexpected moodle_exception in ajax.php: ' . $exception);
         http_response_code(400);
     }
 } catch (Throwable $throwable) {
-    $response['message'] = $throwable->getMessage();
+    $response['message'] = get_string('unknownerror', 'local_courseexams');
     $response['errorcode'] = 'unexpected_error';
+    error_log('[local_courseexams] Unexpected throwable in ajax.php: ' . $throwable);
     http_response_code(500);
 }
 

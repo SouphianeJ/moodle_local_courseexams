@@ -483,6 +483,11 @@
     gap: 0.5rem;
 }
 
+.local-courseexams-modal-help {
+    font-size: 0.8rem;
+    color: #486581;
+}
+
 @media (max-width: 768px) {
     .local-courseexams-summary-bar {
         align-items: flex-start;

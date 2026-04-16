@@ -59,6 +59,11 @@ $jsconfig = [
         'exportallgrades' => get_string('exportallgrades', 'local_courseexams'),
         'exportgradeshint' => get_string('exportgradeshint', 'local_courseexams'),
         'downloadexamgrades' => get_string('downloadexamgrades', 'local_courseexams'),
+        'editvalue' => get_string('editvalue', 'local_courseexams'),
+        'editvaluefor' => get_string('editvaluefor', 'local_courseexams'),
+        'invalidnumericvalue' => get_string('invalidnumericvalue', 'local_courseexams'),
+        'minutesunit' => get_string('minutesunit', 'local_courseexams'),
+        'unlimitedhint' => get_string('unlimitedhint', 'local_courseexams'),
     ],
 ];
 

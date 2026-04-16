@@ -122,6 +122,21 @@
                             data-value="${escapeHtml(item.value)}"
                             data-timestamp="${escapeHtml(item.datetimetimestamp || 0)}"
                         >${escapeHtml(item.value || strings.nodate || '-')}</button>`
+                    : item.valuefield
+                        ? `<button
+                            class="local-courseexams-inline-action"
+                            type="button"
+                            data-action="edit-value"
+                            data-course-id="${escapeHtml(currentCourseId)}"
+                            data-cm-id="${escapeHtml(exam.cmid)}"
+                            data-field="${escapeHtml(item.valuefield)}"
+                            data-label="${escapeHtml(item.label)}"
+                            data-value="${escapeHtml(item.valuevalue ?? '')}"
+                            data-input-type="${escapeHtml(item.valueinputtype || 'number')}"
+                            data-step="${escapeHtml(item.valuestep || '1')}"
+                            data-min="${escapeHtml(item.valuemin || '0')}"
+                            data-unit="${escapeHtml(item.valueunit || '')}"
+                        >${escapeHtml(item.value || '-')}</button>`
                     : escapeHtml(item.value)}</span>
             </div>
         `).join('');
@@ -316,6 +331,13 @@
             }
         };
 
+        const closeValueModal = () => {
+            const modal = document.getElementById('local-courseexams-value-modal');
+            if (modal) {
+                modal.remove();
+            }
+        };
+
         const openDatetimeModal = ({ cmid, field, label, timestamp }) => {
             closeDatetimeModal();
 
@@ -336,6 +358,44 @@
 
             document.body.appendChild(modal);
             const inputNode = document.getElementById('local-courseexams-datetime-input');
+            if (inputNode) {
+                inputNode.focus();
+            }
+        };
+
+        const openValueModal = ({ cmid, field, label, value, inputType, step, min, unit }) => {
+            closeValueModal();
+
+            const helpText = unit === 'minutes'
+                ? (strings.unlimitedhint || '')
+                : '';
+
+            const modal = document.createElement('div');
+            modal.id = 'local-courseexams-value-modal';
+            modal.className = 'local-courseexams-modal';
+            modal.innerHTML = `
+                <div class="local-courseexams-modal-backdrop" data-action="close-value-modal"></div>
+                <div class="local-courseexams-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="local-courseexams-value-title">
+                    <h3 id="local-courseexams-value-title">${escapeHtml(formatString(strings.editvaluefor || strings.editvalue || '', label))}</h3>
+                    <input
+                        id="local-courseexams-value-input"
+                        class="local-courseexams-datetime-input"
+                        type="${escapeHtml(inputType || 'number')}"
+                        value="${escapeHtml(value ?? '')}"
+                        step="${escapeHtml(step || '1')}"
+                        min="${escapeHtml(min || '0')}"
+                    >
+                    ${unit ? `<div class="local-courseexams-modal-help">${escapeHtml(unit === 'minutes' ? (strings.minutesunit || unit) : unit)}</div>` : ''}
+                    ${helpText ? `<div class="local-courseexams-modal-help">${escapeHtml(helpText)}</div>` : ''}
+                    <div class="local-courseexams-modal-actions">
+                        <button type="button" class="btn btn-secondary" data-action="close-value-modal">${escapeHtml(strings.cancel || 'Cancel')}</button>
+                        <button type="button" class="btn btn-primary" data-action="save-value" data-cm-id="${escapeHtml(cmid)}" data-field="${escapeHtml(field)}">${escapeHtml(strings.save || 'Save')}</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            const inputNode = document.getElementById('local-courseexams-value-input');
             if (inputNode) {
                 inputNode.focus();
             }
@@ -403,6 +463,45 @@
                     timestamp: String(Math.floor(parsedDate.getTime() / 1000)),
                 });
                 closeDatetimeModal();
+                await refreshCurrentCourse(strings.savedchanges || '');
+            } catch (error) {
+                renderState('error', error.message || 'Erreur');
+            } finally {
+                button.disabled = false;
+                isMutating = false;
+            }
+        };
+
+        const handleSaveValue = async(button) => {
+            if (isMutating) {
+                return;
+            }
+
+            const inputNode = document.getElementById('local-courseexams-value-input');
+            if (!inputNode || inputNode.value === '') {
+                renderState('error', strings.invalidnumericvalue || 'Invalid value');
+                return;
+            }
+
+            const numericValue = Number(inputNode.value);
+            if (Number.isNaN(numericValue)) {
+                renderState('error', strings.invalidnumericvalue || 'Invalid value');
+                return;
+            }
+
+            isMutating = true;
+            button.disabled = true;
+            renderState('note', strings.loading || '');
+
+            try {
+                await fetchJson({
+                    action: 'update_value',
+                    courseid: String(currentCourseId),
+                    cmid: button.getAttribute('data-cm-id') || '',
+                    field: button.getAttribute('data-field') || '',
+                    value: String(numericValue),
+                });
+                closeValueModal();
                 await refreshCurrentCourse(strings.savedchanges || '');
             } catch (error) {
                 renderState('error', error.message || 'Erreur');
@@ -558,15 +657,42 @@
                 return;
             }
 
+            const editValueButton = event.target.closest('[data-action="edit-value"]');
+            if (editValueButton) {
+                openValueModal({
+                    cmid: editValueButton.getAttribute('data-cm-id') || '',
+                    field: editValueButton.getAttribute('data-field') || '',
+                    label: editValueButton.getAttribute('data-label') || '',
+                    value: editValueButton.getAttribute('data-value') || '',
+                    inputType: editValueButton.getAttribute('data-input-type') || 'number',
+                    step: editValueButton.getAttribute('data-step') || '1',
+                    min: editValueButton.getAttribute('data-min') || '0',
+                    unit: editValueButton.getAttribute('data-unit') || '',
+                });
+                return;
+            }
+
             const saveDatetimeButton = event.target.closest('[data-action="save-datetime"]');
             if (saveDatetimeButton) {
                 handleSaveDatetime(saveDatetimeButton);
                 return;
             }
 
+            const saveValueButton = event.target.closest('[data-action="save-value"]');
+            if (saveValueButton) {
+                handleSaveValue(saveValueButton);
+                return;
+            }
+
             const closeDatetimeButton = event.target.closest('[data-action="close-datetime-modal"]');
             if (closeDatetimeButton) {
                 closeDatetimeModal();
+                return;
+            }
+
+            const closeValueButton = event.target.closest('[data-action="close-value-modal"]');
+            if (closeValueButton) {
+                closeValueModal();
                 return;
             }
 

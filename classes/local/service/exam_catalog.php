@@ -221,6 +221,87 @@ class exam_catalog {
         ];
     }
 
+    public function update_exam_value(int $courseid, int $cmid, int $userid, string $field, float $value): array {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/course/lib.php');
+        require_once($CFG->dirroot . '/mod/assign/lib.php');
+        require_once($CFG->dirroot . '/mod/quiz/lib.php');
+
+        [$course] = $this->validate_course_access($courseid, $userid);
+        $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
+
+        if ($cm->modname === 'assign') {
+            if ($field !== 'grade') {
+                throw new moodle_exception('invalidvaluefield', 'local_courseexams');
+            }
+
+            if ($value < 0) {
+                throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
+            }
+
+            $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
+            $assign->instance = (int)$assign->id;
+            $assign->coursemodule = (int)$cm->id;
+            $assign->grade = $value;
+            assign_update_instance($assign, null);
+
+            return [
+                'cmid' => (int)$cm->id,
+                'field' => $field,
+                'value' => $value,
+                'label' => $this->format_whole_number($value),
+            ];
+        }
+
+        if ($cm->modname !== 'quiz') {
+            throw new moodle_exception('invalidactivitytype', 'local_courseexams');
+        }
+
+        $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
+        $quiz->instance = (int)$quiz->id;
+        $quiz->coursemodule = (int)$cm->id;
+
+        if ($field === 'timelimit') {
+            if ($value < 0) {
+                throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
+            }
+            $quiz->timelimit = (int)round($value * 60);
+            $label = $this->format_duration((int)$quiz->timelimit);
+            $storedvalue = (int)$quiz->timelimit;
+        } else if ($field === 'attempts') {
+            if ($value < 0) {
+                throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
+            }
+            $quiz->attempts = (int)round($value);
+            $label = empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts;
+            $storedvalue = (int)$quiz->attempts;
+        } else if ($field === 'grade') {
+            if ($value < 0) {
+                throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
+            }
+            $quiz->grade = $value;
+            $label = $this->format_whole_number($value);
+            $storedvalue = $value;
+        } else {
+            throw new moodle_exception('invalidvaluefield', 'local_courseexams');
+        }
+
+        $result = quiz_update_instance($quiz, null);
+        if ($result !== true) {
+            throw new moodle_exception('unabletoupdatevalue', 'local_courseexams');
+        }
+
+        rebuild_course_cache($course->id, false, true);
+
+        return [
+            'cmid' => (int)$cm->id,
+            'field' => $field,
+            'value' => $storedvalue,
+            'label' => $label,
+        ];
+    }
+
     public function build_single_exam_grade_export(int $courseid, int $cmid, int $userid): \grade_export_xls {
         global $CFG, $DB;
 
@@ -289,7 +370,7 @@ class exam_catalog {
                 ['label' => get_string('allowsubmissionsfromdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->allowsubmissionsfromdate), 'datetimefield' => 'allowsubmissionsfromdate', 'datetimetimestamp' => (int)$assign->allowsubmissionsfromdate],
                 ['label' => get_string('duedate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->duedate), 'datetimefield' => 'duedate', 'datetimetimestamp' => (int)$assign->duedate],
                 ['label' => get_string('cutoffdate', 'local_courseexams'), 'value' => $this->format_datetime((int)$assign->cutoffdate), 'datetimefield' => 'cutoffdate', 'datetimetimestamp' => (int)$assign->cutoffdate],
-                ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null)],
+                ['label' => get_string('grade', 'local_courseexams'), 'value' => $this->format_whole_number($assign->grade ?? null), 'valuefield' => 'grade', 'valueinputtype' => 'number', 'valueunit' => '', 'valuevalue' => (float)($assign->grade ?? 0), 'valuestep' => '0.01', 'valuemin' => '0'],
                 ['label' => get_string('teamsubmission', 'local_courseexams'), 'value' => !empty($assign->teamsubmission) ? get_string('yeslabel', 'local_courseexams') : get_string('nolabel', 'local_courseexams')],
                 ['label' => get_string('submissiontypes', 'local_courseexams'), 'value' => $this->get_assign_submission_modes((int)$assign->id)],
                 ['label' => get_string('testexam', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $cm->url ? $cm->url->out(false) : ''],
@@ -329,9 +410,9 @@ class exam_catalog {
             'meta' => [
                 ['label' => get_string('timeopen', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeopen), 'datetimefield' => 'timeopen', 'datetimetimestamp' => (int)$quiz->timeopen],
                 ['label' => get_string('timeclose', 'local_courseexams'), 'value' => $this->format_datetime((int)$quiz->timeclose), 'datetimefield' => 'timeclose', 'datetimetimestamp' => (int)$quiz->timeclose],
-                ['label' => get_string('timelimit', 'local_courseexams'), 'value' => $this->format_duration((int)$quiz->timelimit)],
-                ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts],
-                ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null)],
+                ['label' => get_string('timelimit', 'local_courseexams'), 'value' => $this->format_duration((int)$quiz->timelimit), 'valuefield' => 'timelimit', 'valueinputtype' => 'number', 'valueunit' => 'minutes', 'valuevalue' => (float)(((int)$quiz->timelimit) / 60), 'valuestep' => '1', 'valuemin' => '0'],
+                ['label' => get_string('attempts', 'local_courseexams'), 'value' => empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts, 'valuefield' => 'attempts', 'valueinputtype' => 'number', 'valueunit' => '', 'valuevalue' => (int)$quiz->attempts, 'valuestep' => '1', 'valuemin' => '0'],
+                ['label' => get_string('grademax', 'local_courseexams'), 'value' => $this->format_whole_number($quiz->grade ?? null), 'valuefield' => 'grade', 'valueinputtype' => 'number', 'valueunit' => '', 'valuevalue' => (float)($quiz->grade ?? 0), 'valuestep' => '0.01', 'valuemin' => '0'],
                 ['label' => get_string('questionsperpage', 'local_courseexams'), 'value' => (string)($quiz->questionsperpage ?? '')],
                 ['label' => get_string('seeallquestions', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $this->get_quiz_questions_edit_url((int)$cm->id)],
                 ['label' => get_string('testexam', 'local_courseexams'), 'value' => get_string('linklabel', 'local_courseexams'), 'linkurl' => $cm->url ? $cm->url->out(false) : ''],

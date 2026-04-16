@@ -172,7 +172,6 @@ class exam_catalog {
 
         require_once($CFG->dirroot . '/course/lib.php');
         require_once($CFG->dirroot . '/mod/assign/lib.php');
-        require_once($CFG->dirroot . '/mod/quiz/lib.php');
 
         [$course] = $this->validate_course_access($courseid, $userid);
         $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
@@ -199,14 +198,9 @@ class exam_catalog {
             }
 
             $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
-            $quiz->instance = (int)$quiz->id;
-            $quiz->coursemodule = (int)$cm->id;
-            $quiz->{$field} = $timestamp;
-            $result = quiz_update_instance($quiz, null);
-
-            if ($result !== true) {
-                throw new moodle_exception('unabletoupdatedatetime', 'local_courseexams');
-            }
+            $this->update_quiz_record($quiz, (int)$cm->id, [
+                $field => $timestamp,
+            ]);
         } else {
             throw new moodle_exception('invalidactivitytype', 'local_courseexams');
         }
@@ -226,7 +220,6 @@ class exam_catalog {
 
         require_once($CFG->dirroot . '/course/lib.php');
         require_once($CFG->dirroot . '/mod/assign/lib.php');
-        require_once($CFG->dirroot . '/mod/quiz/lib.php');
 
         [$course] = $this->validate_course_access($courseid, $userid);
         $cm = get_coursemodule_from_id('', $cmid, $course->id, false, MUST_EXIST);
@@ -259,38 +252,34 @@ class exam_catalog {
         }
 
         $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
-        $quiz->instance = (int)$quiz->id;
-        $quiz->coursemodule = (int)$cm->id;
+        $updates = [];
 
         if ($field === 'timelimit') {
             if ($value < 0) {
                 throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
             }
-            $quiz->timelimit = (int)round($value * 60);
-            $label = $this->format_duration((int)$quiz->timelimit);
-            $storedvalue = (int)$quiz->timelimit;
+            $updates['timelimit'] = (int)round($value * 60);
+            $label = $this->format_duration((int)$updates['timelimit']);
+            $storedvalue = (int)$updates['timelimit'];
         } else if ($field === 'attempts') {
             if ($value < 0) {
                 throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
             }
-            $quiz->attempts = (int)round($value);
-            $label = empty($quiz->attempts) ? get_string('unlimited', 'local_courseexams') : (string)$quiz->attempts;
-            $storedvalue = (int)$quiz->attempts;
+            $updates['attempts'] = (int)round($value);
+            $label = empty($updates['attempts']) ? get_string('unlimited', 'local_courseexams') : (string)$updates['attempts'];
+            $storedvalue = (int)$updates['attempts'];
         } else if ($field === 'grade') {
             if ($value < 0) {
                 throw new moodle_exception('invalidnumericvalue', 'local_courseexams');
             }
-            $quiz->grade = $value;
+            $updates['grade'] = $value;
             $label = $this->format_whole_number($value);
             $storedvalue = $value;
         } else {
             throw new moodle_exception('invalidvaluefield', 'local_courseexams');
         }
 
-        $result = quiz_update_instance($quiz, null);
-        if ($result !== true) {
-            throw new moodle_exception('unabletoupdatevalue', 'local_courseexams');
-        }
+        $this->update_quiz_record($quiz, (int)$cm->id, $updates);
 
         rebuild_course_cache($course->id, false, true);
 
@@ -709,6 +698,40 @@ class exam_catalog {
 
     private function get_quiz_questions_edit_url(int $cmid): string {
         return (new \moodle_url('/mod/quiz/edit.php', ['cmid' => $cmid]))->out(false);
+    }
+
+    private function update_quiz_record(\stdClass $quiz, int $cmid, array $updates): void {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/mod/quiz/lib.php');
+        require_once($CFG->dirroot . '/mod/quiz/locallib.php');
+
+        $oldquiz = clone $quiz;
+
+        foreach ($updates as $field => $value) {
+            $quiz->{$field} = $value;
+        }
+
+        $quiz->timemodified = time();
+        $DB->update_record('quiz', $quiz);
+
+        $quiz->coursemodule = $cmid;
+        quiz_update_events($quiz);
+        \core_completion\api::update_completion_date_event($cmid, 'quiz', $quiz->id, null);
+        quiz_grade_item_update($quiz);
+
+        if ((float)$oldquiz->grade !== (float)$quiz->grade) {
+            quiz_update_all_final_grades($quiz);
+            quiz_update_grades($quiz);
+        }
+
+        $dateschanged = (int)$oldquiz->timelimit !== (int)$quiz->timelimit ||
+            (int)$oldquiz->timeclose !== (int)$quiz->timeclose ||
+            (int)$oldquiz->graceperiod !== (int)$quiz->graceperiod;
+
+        if ($dateschanged) {
+            quiz_update_open_attempts(['quizid' => $quiz->id]);
+        }
     }
 
     private function get_single_exam_export_url(int $courseid, int $cmid): string {

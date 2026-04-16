@@ -268,8 +268,8 @@
             </section>
         `;
 
-        const renderArchivedPlaceholder = (summary) => `
-            <details id="local-courseexams-archived-toggle" class="local-courseexams-archive-toggle">
+        const renderArchivedPlaceholder = (summary, isOpen) => `
+            <details id="local-courseexams-archived-toggle" class="local-courseexams-archive-toggle"${isOpen ? ' open' : ''}>
                 <summary>${escapeHtml(strings.showarchivedexams)} (${escapeHtml(summary.pastorhiddencount)})</summary>
                 <div id="local-courseexams-archived-content" class="local-courseexams-archive-content"></div>
             </details>
@@ -322,6 +322,10 @@
                     archivedContent.innerHTML = `<div class="local-courseexams-error">${escapeHtml(error.message || 'Erreur')}</div>`;
                 }
             });
+
+            if (archivedToggle.open && archivedLoadedFor !== currentCourseId) {
+                archivedToggle.dispatchEvent(new Event('toggle'));
+            }
         };
 
         const closeDatetimeModal = () => {
@@ -542,11 +546,14 @@
         };
 
         const renderData = (data) => {
+            const shouldOpenArchived = (!data.upcomingexams || data.upcomingexams.length === 0) &&
+                Number(data.summary?.pastorhiddencount || 0) > 0;
+
             renderState('note', `${strings.refreshedat} ${data.generated.label}`);
             renderSummary(data);
             listNode.innerHTML = `
                 ${renderExamTable(strings.upcomingexams, data.upcomingexams || [], strings.empty || '', 'upcoming')}
-                ${renderArchivedPlaceholder(data.summary)}
+                ${renderArchivedPlaceholder(data.summary, shouldOpenArchived)}
             `;
             attachRowToggles(listNode);
             attachArchivedLoader();

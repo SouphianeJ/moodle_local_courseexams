@@ -141,6 +141,43 @@
             </div>
         `).join('');
 
+        const renderLinkedCellValue = (value, linkUrl, linkLabel) => `
+            <div class="local-courseexams-table-cell-link">
+                <a class="local-courseexams-meta-link" href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(value)}</a>
+                ${linkLabel ? `<span class="local-courseexams-table-cell-link-meta">(<a class="local-courseexams-meta-link" href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkLabel)}</a>)</span>` : ''}
+            </div>
+        `;
+
+        const renderTableCell = (row, column) => {
+            const value = row[column.key] ?? '';
+            const linkUrl = row[`${column.key}url`];
+            const linkLabel = row[`${column.key}linklabel`];
+            const randomQuestionNames = Array.isArray(row.randomquestionnames) ? row.randomquestionnames : null;
+
+            if (column.key === 'name' && randomQuestionNames) {
+                const heading = linkUrl
+                    ? renderLinkedCellValue(value, linkUrl, linkLabel)
+                    : `<div>${escapeHtml(value)}</div>`;
+                const items = randomQuestionNames.length
+                    ? `<ul class="local-courseexams-random-question-list">${randomQuestionNames.map((questionName) => `<li>${escapeHtml(questionName)}</li>`).join('')}</ul>`
+                    : `<div class="local-courseexams-muted">${escapeHtml(row.randomquestionsemptylabel || strings.empty || '')}</div>`;
+
+                return `
+                    <div class="local-courseexams-random-question-cell">
+                        ${heading}
+                        <div class="local-courseexams-muted local-courseexams-random-question-summary">${escapeHtml(row.randomdrawsummary || '')}</div>
+                        ${items}
+                    </div>
+                `;
+            }
+
+            if (!linkUrl) {
+                return escapeHtml(value);
+            }
+
+            return renderLinkedCellValue(value, linkUrl, linkLabel);
+        };
+
         const renderRows = (rows, columns) => {
             if (!rows.length) {
                 return `<p class="local-courseexams-muted">${escapeHtml(strings.empty || '')}</p>`;
@@ -148,7 +185,7 @@
 
             const head = columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('');
             const body = rows.map((row) => `
-                <tr>${columns.map((column) => `<td>${escapeHtml(row[column.key] ?? '')}</td>`).join('')}</tr>
+                <tr>${columns.map((column) => `<td>${renderTableCell(row, column)}</td>`).join('')}</tr>
             `).join('');
 
             return `<table class="local-courseexams-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;

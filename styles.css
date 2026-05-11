@@ -231,6 +231,23 @@
     color: #627d98;
 }
 
+.local-courseexams-random-question-cell {
+    min-width: 18rem;
+}
+
+.local-courseexams-random-question-summary {
+    margin-top: 0.35rem;
+}
+
+.local-courseexams-random-question-list {
+    margin: 0.45rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.local-courseexams-random-question-list li + li {
+    margin-top: 0.2rem;
+}
+
 .local-courseexams-note,
 .local-courseexams-error {
     padding: 0.7rem 0.8rem;

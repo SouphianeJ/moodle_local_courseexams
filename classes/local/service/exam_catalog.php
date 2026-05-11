@@ -377,7 +377,7 @@ class exam_catalog {
 
         $quiz = $DB->get_record('quiz', ['id' => $cm->instance], '*', MUST_EXIST);
         $sectionlabel = $this->get_section_label($course, (int)$cm->sectionnum);
-        $questions = $this->get_quiz_questions((int)$quiz->id);
+        $questions = $this->get_quiz_questions((int)$quiz->id, (int)$cm->id);
         $overrides = $this->get_quiz_overrides((int)$quiz->id);
         $canexportgrades = has_capability('moodle/grade:export', $cm->context) && has_capability('gradeexport/xls:view', $cm->context);
 
@@ -604,14 +604,15 @@ class exam_catalog {
         ];
     }
 
-    private function get_quiz_questions(int $quizid): array {
+    private function get_quiz_questions(int $quizid, int $cmid): array {
+        $randomslots = $this->get_quiz_random_slots($quizid, $cmid);
         $quizobj = \quiz::create($quizid);
         $structure = \mod_quiz\structure::create_for_quiz($quizobj);
         $questions = [];
 
         for ($slot = 1; $slot <= $structure->get_question_count(); $slot++) {
             $question = $structure->get_question_in_slot($slot);
-            $questions[] = [
+            $item = [
                 'slot' => $slot,
                 'displayednumber' => $structure->get_displayed_number_for_slot($slot),
                 'name' => $this->format_question_text($question),
@@ -619,9 +620,184 @@ class exam_catalog {
                 'maxmark' => isset($question->maxmark) ? format_float($question->maxmark, 2) : '',
                 'page' => $structure->get_page_number_for_slot($slot),
             ];
+
+            if (isset($randomslots[$slot])) {
+                $item['name'] = $randomslots[$slot]['categoryname'];
+                $item['nameurl'] = $randomslots[$slot]['categoryurl'];
+                $item['namelinklabel'] = get_string('questionbanklabel', 'local_courseexams');
+                $item['qtype'] = 'random';
+                $item['randomdrawsummary'] = $randomslots[$slot]['drawsummary'];
+                $item['randomquestionnames'] = $randomslots[$slot]['questions'];
+                $item['randomquestionsemptylabel'] = $randomslots[$slot]['emptylabel'];
+            }
+
+            $questions[] = $item;
         }
 
         return $questions;
+    }
+
+    private function get_quiz_random_slots(int $quizid, int $cmid): array {
+        global $DB;
+
+        $sql = "SELECT qs.slot, qsr.questionscontextid, qsr.filtercondition
+                  FROM {quiz_slots} qs
+             LEFT JOIN {question_set_references} qsr
+                    ON qsr.itemid = qs.id
+                   AND qsr.component = :component
+                   AND qsr.questionarea = :questionarea
+                 WHERE qs.quizid = :quizid
+                   AND qsr.id IS NOT NULL
+              ORDER BY qs.slot ASC";
+
+        $records = $DB->get_records_sql($sql, [
+            'component' => 'mod_quiz',
+            'questionarea' => 'slot',
+            'quizid' => $quizid,
+        ]);
+
+        if (!$records) {
+            return [];
+        }
+
+        $categoryids = [];
+        $categorygroups = [];
+        $randomslots = [];
+
+        foreach ($records as $record) {
+            $filtercondition = json_decode($record->filtercondition ?? '', true);
+            $categoryid = isset($filtercondition['questioncategoryid']) ? (int)$filtercondition['questioncategoryid'] : 0;
+            $contextid = (int)$record->questionscontextid;
+            $includesubcategories = !empty($filtercondition['includesubcategories']);
+
+            if ($categoryid < 1 || $contextid < 1) {
+                continue;
+            }
+
+            $categoryids[$categoryid] = $categoryid;
+            $groupkey = $this->get_random_slot_group_key($categoryid, $contextid, $includesubcategories);
+            $categorygroups[$groupkey] = [
+                'categoryid' => $categoryid,
+                'contextid' => $contextid,
+                'includesubcategories' => $includesubcategories,
+                'drawcount' => ($categorygroups[$groupkey]['drawcount'] ?? 0) + 1,
+            ];
+            $randomslots[(int)$record->slot] = [
+                'categoryid' => $categoryid,
+                'contextid' => $contextid,
+                'groupkey' => $groupkey,
+            ];
+        }
+
+        if (!$randomslots) {
+            return [];
+        }
+
+        $categories = $DB->get_records('question_categories', null, '', 'id,name,parent');
+
+        foreach ($categorygroups as $groupkey => $group) {
+            $categorygroups[$groupkey]['questions'] = $this->get_question_names_for_category(
+                $group['categoryid'],
+                $group['includesubcategories'],
+                $categories
+            );
+        }
+
+        foreach ($randomslots as $slot => $item) {
+            $category = $categories[$item['categoryid']] ?? null;
+            $categoryname = $category ? format_string($category->name, true) : ('#' . $item['categoryid']);
+            $group = $categorygroups[$item['groupkey']] ?? [
+                'drawcount' => 1,
+                'questions' => [],
+            ];
+            $randomslots[$slot] = [
+                'categoryname' => $categoryname,
+                'categoryurl' => (new \moodle_url('/question/edit.php', [
+                    'cmid' => $cmid,
+                    'cat' => $item['categoryid'] . ',' . $item['contextid'],
+                    'recurse' => 1,
+                ]))->out(false),
+                'drawcount' => (int)$group['drawcount'],
+                'drawsummary' => get_string('randomdrawsummary', 'local_courseexams', (int)$group['drawcount']),
+                'questions' => array_values($group['questions']),
+                'emptylabel' => get_string('randomquestionsempty', 'local_courseexams'),
+            ];
+        }
+
+        return $randomslots;
+    }
+
+    private function get_random_slot_group_key(int $categoryid, int $contextid, bool $includesubcategories): string {
+        return implode(':', [$categoryid, $contextid, (int)$includesubcategories]);
+    }
+
+    private function get_question_names_for_category(int $categoryid, bool $includesubcategories, array $knowncategories = []): array {
+        global $DB;
+
+        $categoryids = $this->get_question_category_ids($categoryid, $includesubcategories, $knowncategories);
+
+        if (!$categoryids) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($categoryids, SQL_PARAMS_NAMED);
+        $sql = "SELECT q.id, q.name, q.questiontext, q.questiontextformat
+                  FROM {question_bank_entries} qbe
+                  JOIN (
+                        SELECT questionbankentryid, MAX(version) AS latestversion
+                          FROM {question_versions}
+                      GROUP BY questionbankentryid
+                  ) latest ON latest.questionbankentryid = qbe.id
+                  JOIN {question_versions} qv
+                    ON qv.questionbankentryid = latest.questionbankentryid
+                   AND qv.version = latest.latestversion
+                  JOIN {question} q ON q.id = qv.questionid
+                 WHERE qbe.questioncategoryid {$insql}
+                   AND q.parent = 0
+                   AND q.qtype <> :randomqtype
+              ORDER BY q.name ASC";
+        $params['randomqtype'] = 'random';
+
+        $records = $DB->get_records_sql($sql, $params);
+        $questions = [];
+
+        foreach ($records as $record) {
+            $questions[] = $this->format_question_text($record);
+        }
+
+        return $questions;
+    }
+
+    private function get_question_category_ids(int $categoryid, bool $includesubcategories, array $knowncategories = []): array {
+        global $DB;
+
+        if (!$includesubcategories) {
+            return [$categoryid];
+        }
+
+        $categories = $knowncategories ?: $DB->get_records('question_categories', null, '', 'id,parent');
+        $descendants = [$categoryid => $categoryid];
+        $pending = [$categoryid];
+
+        while ($pending) {
+            $currentid = array_pop($pending);
+
+            foreach ($categories as $category) {
+                if ((int)$category->parent !== $currentid) {
+                    continue;
+                }
+
+                $childid = (int)$category->id;
+                if (isset($descendants[$childid])) {
+                    continue;
+                }
+
+                $descendants[$childid] = $childid;
+                $pending[] = $childid;
+            }
+        }
+
+        return array_values($descendants);
     }
 
     private function get_section_label(\stdClass $course, int $sectionnum): string {
@@ -658,8 +834,6 @@ class exam_catalog {
         if (!$hasteacherrole) {
             throw new moodle_exception('accessdeniednoteacher', 'local_courseexams');
         }
-
-        require_capability('local/courseexams:view', $context, $userid);
 
         return [$course, $context];
     }
